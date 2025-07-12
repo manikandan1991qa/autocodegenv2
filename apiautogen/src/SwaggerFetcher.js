@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+//import sampleData from './swagger.json';
+import util from './util.js'
 
 const SwaggerFetcher = ({ swaggerUrl, onTry }) => {
   const [swaggerJson, setSwaggerJson] = useState(null);
@@ -7,10 +9,21 @@ const SwaggerFetcher = ({ swaggerUrl, onTry }) => {
   useEffect(() => {
     const fetchSwaggerJson = async () => {
       try {
+
+        let swaggerURL;
+
+        if (swaggerUrl.startsWith('\\') ) {
+          swaggerURL = swaggerUrl;
+        } else {
+          swaggerURL = 'http://localhost:4000/swagger?url="' + encodeURIComponent(swaggerUrl) ;
+        }
+        
         const response = await fetch(swaggerUrl);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         setSwaggerJson(data);
+
+        // setSwaggerJson(sampleData);
       } catch (err) {
         setError(err.message);
       }
@@ -22,9 +35,22 @@ const SwaggerFetcher = ({ swaggerUrl, onTry }) => {
     if (!swaggerJson?.paths) return <p>No API paths found.</p>;
 
     const flatEndpoints = [];
+    const components = swaggerJson.components?.schemas || {};
+
     for (const [path, methods] of Object.entries(swaggerJson.paths)) {
       for (const [method, details] of Object.entries(methods)) {
-        flatEndpoints.push({ path, method, details });
+
+        const headervalues = util.generateHeaderSamples(details.parameters);
+        const requestBodySchema =
+          details.requestBody?.content?.['application/json']?.schema;
+
+        const requestSample = requestBodySchema
+          ? util.generateSampleFromSchema(requestBodySchema, components)
+          : null;
+
+        const responseSamples = util.generateResponseSamples(details.responses, components);
+
+        flatEndpoints.push({ path, method, details: { ...details, headervalues, requestSample, responseSamples } });
       }
     }
 

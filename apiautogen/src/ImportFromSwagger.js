@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import SwaggerFetcher from './SwaggerFetcher';
 
-const ImportFromSwagger = ({onData}) => {
+
+const ImportFromSwagger = ({onReset,onData}) => {
   const [showPopup, setShowPopup] = useState(false);
   const [swaggerUrl, setSwaggerUrl] = useState('');
   const [submittedUrl, setSubmittedUrl] = useState(null);
 
   const handleOpenPopup = () => {
+    onReset();
     setShowPopup(true);
     setSwaggerUrl('');
     setSubmittedUrl(null);
@@ -30,6 +32,8 @@ const ImportFromSwagger = ({onData}) => {
     setShowPopup(false);
   };
 
+
+  
   return (
     <div>
       <button onClick={handleOpenPopup}>Import from Swagger</button>

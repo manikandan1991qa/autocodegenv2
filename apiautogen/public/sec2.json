@@ -1,0 +1,343 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Fund Transfers Service",
+    "summary": "Application fund transfers requests",
+    "description": "Application serving requests to perform fund transfers.",
+    "contact": null
+  },
+  "servers": [
+    {
+      "url": "https://fund-transfers-sg.apps.dev.ocbc.com",
+      "description": "SIT server"
+    },
+    {
+      "url": "https://fund-transfers-sg.apps.uat.ocbc.com",
+      "description": "UAT server"
+    },
+    {
+      "url": "https://fund-transfers-sg-apps.ocbc.com",
+      "description": "Main (production) server"
+    }
+  ],
+  "paths": {
+    " /v1/ospl/consent/provide/status": {
+      "post": {
+        "tags": [
+          "OSPL Transfer Consent Management"
+        ],
+        "summary": "consent provision process result",
+        "operationId": "consentProvideStatusInquiry",
+        "parameters": [
+          {
+            "name": "x-correlation-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "uuid"
+            }
+          },
+          {
+            "name": "x-source-country",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-source-date-time",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-source-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-acc-jwt",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentProvisionStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentProvisionStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "Sref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "fref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+	 " /v1/ospl/consent/revoke": {
+      "post": {
+        "tags": [
+          "OSPL Transfer Consent Management"
+        ],
+        "summary": "Revoke Previously provisioned consent",
+        "operationId": "consentRevoke",
+        "parameters": [
+          {
+            "name": "x-correlation-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "uuid"
+            }
+          },
+          {
+            "name": "x-source-country",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-source-date-time",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-source-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-acc-jwt",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeConsentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeConsentRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "Sref": "#/components/schemas/RevokeConsentRequest"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "fref": "#/components/schemas/RevokeConsentRequest"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+	},
+	  
+   "components": {
+      "schemas": {
+        "ConsentProvisionStatusRequest": {
+          "type": "object",
+          "properties": {
+            "consentId": {
+              "type": "string",
+              "Format": "uuid",
+              "required": true
+            },
+            "peopleId": {
+              "type": "string",
+              "required": true
+            }
+          }
+        },
+        "ConsentProvisionStatusResponse": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "consentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "peopleld": {
+                  "type": "string"
+                },
+                "cifNo": {
+                  "type": "string"
+                },
+                "referenceNo": {
+                  "type": "string"
+                },
+                "accounts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "productName": {
+                        "type": "string"
+                      },
+                      "maskedAccountNo": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "tagAllAccounts": {
+                  "type": "string",
+                  "enum": [
+                    "YES",
+                    "NO",
+                    "NOT_APPLICABLE"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "RevokeConsentRequest": {
+          "type": "object",
+          "properties": {
+            "consentId": {
+              "type": "string",
+              "Format": "uuid",
+              "required": true
+            },
+            "peopleId": {
+              "type": "string",
+              "required": true
+            },
+			 "sendNotification": {
+              "type": "string",
+              "enum": [
+			  "YES",
+			  "NO"
+			  ]
+            }
+          }
+	  },
+	   "RevokeConsentResponse": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            
+            }
+          }
+	  },
+	   "StandardErrorResponse": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "errorCode": {
+              "type": "string"
+            },
+            "errorDescription": {
+              "type": "string"
+            },
+            "errorInfo": {
+              "type": "object",
+              "properties": {
+                "errorDetail": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "errorCode": {
+                        "type": "string"
+                      },
+                      "errorDescription": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
