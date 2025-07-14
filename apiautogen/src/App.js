@@ -1,542 +1,583 @@
-//import React, { useState } from "react";
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import React, { useEffect, useState, useRef , useCallback } from 'react' ;
-import { FaEdit, FaPlus, FaCode, FaTrash, FaDownload, FaCopy } from 'react-icons/fa';
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import {
+  FaEdit,
+  FaPlus,
+  FaCode,
+  FaTrash,
+  FaDownload,
+  FaCopy,
+} from "react-icons/fa";
 import { BiSelectMultiple } from "react-icons/bi";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import Swal from 'sweetalert2';
-import ImportFromSwagger from './ImportFromSwagger';
-import {camelCase} from  'change-case';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Swal from "sweetalert2";
+import ImportFromSwagger from "./ImportFromSwagger";
+import { camelCase } from "change-case";
+import "./App.css"; // Import the CSS file
 
-const CollapsibleSection = ({ title, isOpen, onToggle, children }) => (
-    <div style={{ marginBottom: 15, border: '1px solid #ccc', borderRadius: 5 }}>
-        <div
-            onClick={onToggle}
-            style={{
-                background: '#f5f5f5',
-                padding: '10px 15px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: isOpen ? '1px solid #ccc' : 'none',
-            }}
-        >
-            {title}
-            <span style={{ fontSize: '1.2em' }}>{isOpen ? '▴' : '▾'}</span>
-        </div>
-        {isOpen && (
-            <div style={{ padding: 15 }}>
-                {children}
-            </div>
-        )}
+// --- Constants ---
+const JSON_PARSE_ERROR_TITLE = "Invalid JSON";
+const JSON_PARSE_ERROR_TEXT = "Please check your input. Error: ";
+const MISSING_INFO_TITLE = "Missing Information";
+const FORMATTING_ERROR_TITLE = "Formatting Error";
+const NO_CODE_TITLE = "No Code";
+const TOAST_POSITION = "bottom-center";
+const TOAST_AUTO_CLOSE = 3000;
+
+// --- CollapsibleSection Component ---
+const CollapsibleSection = React.memo(
+  ({ title, isOpen, onToggle, children }) => (
+    <div className="collapsible-section-container">
+      <div
+        onClick={onToggle}
+        className={`collapsible-section-header ${isOpen ? "open" : ""}`}
+      >
+        {title}
+        <span className="collapsible-section-icon">{isOpen ? "▴" : "▾"}</span>
+      </div>
+      {isOpen && <div className="collapsible-section-content">{children}</div>}
     </div>
+  )
 );
 
-
-
-function App() { 
-const [serviceName, setServiceName] = useState("");
-const [apiEndpoint, setApiEndpoint] = useState("");
-const [requestType, setRequestType] = useState("GET");
-const [headerKey, setHeaderKey] = useState("");
-const [headerValue, setHeaderValue] = useState("");
-const [headers, setHeaders] = useState ([]);
-const [bulkHeaders, setBulkHeaders] = useState("");
-const [requestBody, setRequestBody] = useState("");
-const [responseBody, setResponseBody] = useState("");
-const [errorResponseBody, setErrorResponseBody] = useState("");
-const [responseCode, setResponseCode] = useState("200");
-const [generatedCode, setGeneratedCode] = useState("");
-const [stepDefinition, setStepDefinition] = useState("");
-const [featureFile, setFeatureFile] = useState("");
-const [isRequestBodyFormatted, setIsRequestBodyFormatted] = useState(false);
-
-
-
+// --- Custom Hook for Line-by-Line Code Display ---
 const useLineByLineCode = (fullCode, delay = 120) => {
-const [visiblecode, setVisibleCode] = useState('');
+  const [visibleCode, setVisibleCode] = useState("");
+  const intervalRef = useRef(null);
 
-useEffect (() => {
-if (typeof fullCode !== 'string' || !fullCode.trim()) {
-setVisibleCode('');
-return;
-}
+  useEffect(() => {
+    if (typeof fullCode !== "string" || !fullCode.trim()) {
+      setVisibleCode("");
+      return;
+    }
 
-const lines = fullCode
-.split('\n')
-.filter(line => typeof line === 'string' && line.trim() !== '');
+    const lines = fullCode.split("\n");
+    let currentLine = 0;
+    let accumulatedCode = "";
 
-let currentLine = 0;
-let accumalatedCode = '';
+    intervalRef.current = setInterval(() => {
+      if (currentLine < lines.length) {
+        accumulatedCode += lines[currentLine] + "\n";
+        setVisibleCode(accumulatedCode);
+        currentLine++;
+      } else {
+        clearInterval(intervalRef.current);
+      }
+    }, delay);
 
-const interval = setInterval (() => {
-if (currentLine < lines.length) {
-accumalatedCode += lines[currentLine] + '\n';
-setVisibleCode(accumalatedCode);
-currentLine++;
-} else {
-clearInterval(interval);
-}
-}, delay);
-
-return () => clearInterval(interval);
-}, [fullCode, delay]);
-
-return visiblecode;
-};
-
-
-
-const visibleGeneratedCode = useLineByLineCode(generatedCode);
-const visibleStepDefinition = useLineByLineCode(stepDefinition);
-const visibleFeatureFile = useLineByLineCode(featureFile);
-
-
-let templateTableString;
-let exampleTableString;
-let exampleErrorTablestring;
-let userInputMap='';
-let selectedCheckBoxes;
-
-// Track view mode for each JASON field
-const [viewMode, setViewMode] = useState({
-request: 'edit',
-response:'edit',
-error: 'edit'
-});
-
-
-const [accordionState, setAccordionState] = useState({
-requestBody: false,
-successResponse: false,
-errorResponse: false,
-bulkHeaders: false,    
-
-});
-
-
-    const toggleAccordion = (section) => {
-        setAccordionState(prev => ({
-            ...prev,
-            [section]: !prev[section],
-        }));
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
+  }, [fullCode, delay]);
 
-const [selectableRequestTree, setSelectableRequestTree] = useState({});
-const [selectedRequestTree, setSelectedRequestTree] = useState({});
-
-
-const addHeader = () => {
-if (headerKey.trim() && headerValue.trim()) {
-setHeaders([...headers, { key: headerKey.trim(), value: headerValue.trim() }]);
-setHeaderKey("");
-setHeaderValue("");
-}
+  return visibleCode;
 };
 
-const bulkAddHeaders = () => {
-if (bulkHeaders.trim()) {
-const newHeaders = bulkHeaders
-.split("\n")
-.map((line) => line.trim())
-.filter((line) => line.includes(":"))
-.map((line) => {
-const idx = line.indexOf(":");
-return {
-key: line.slice(0, idx). trim(),
-value: line.slice(idx + 1).trim(),
-};
-});
-setHeaders([...headers, ...newHeaders]);
-setBulkHeaders("");
-}
-};
+// --- Main App Component ---
+function App() {
+  const [currentStep, setCurrentStep] = useState(1); // New state for current step
+  const [serviceName, setServiceName] = useState("");
+  const [apiEndpoint, setApiEndpoint] = useState("");
+  const [requestType, setRequestType] = useState("GET");
+  const [headerKey, setHeaderKey] = useState("");
+  const [headerValue, setHeaderValue] = useState("");
+  const [headers, setHeaders] = useState([]);
+  const [bulkHeaders, setBulkHeaders] = useState("");
+  const [requestBody, setRequestBody] = useState("");
+  const [responseBody, setResponseBody] = useState("");
+  const [errorResponseBody, setErrorResponseBody] = useState("");
+  const [responseCode, setResponseCode] = useState("200");
+  const [generatedCode, setGeneratedCode] = useState("");
+  const [stepDefinition, setStepDefinition] = useState("");
+  const [featureFile, setFeatureFile] = useState("");
+  const [isRequestBodyFormatted, setIsRequestBodyFormatted] = useState(false);
+  const [parsedRequestBody, setParsedRequestBody] = useState({});
+  const [selectedRequestFields, setSelectedRequestFields] = useState([]);
 
-const clearAll = () => {
-setServiceName("");
-setApiEndpoint("");
-setRequestType("GET");
-setHeaderKey("");
-setHeaderValue("");
-setHeaders([]);
-setBulkHeaders("");
-setRequestBody("");
-setResponseBody("");
-setErrorResponseBody("");
-setResponseCode("200");
-setGeneratedCode("");
-setStepDefinition("");
-setFeatureFile("");
-setIsRequestBodyFormatted(false);
-setViewMode({
-request: 'edit',
-response: 'edit',
-error: 'edit'
-});
-collapseAllSections();
-};
+  const visibleGeneratedCode = useLineByLineCode(generatedCode);
+  const visibleStepDefinition = useLineByLineCode(stepDefinition);
+  const visibleFeatureFile = useLineByLineCode(featureFile);
 
+  const [viewMode, setViewMode] = useState({
+    request: "edit",
+    response: "edit",
+    error: "edit",
+  });
 
+  const [accordionState, setAccordionState] = useState({
+    requestBody: false,
+    successResponse: false,
+    errorResponse: false,
+    bulkHeaders: false,
+  });
 
-const buildTree = (obj) => {
-if (typeof obj !== 'object' || obj === null) return true; // leaf node
-const tree = {};
-for (const key in obj) {
-tree[key] = buildTree(obj[key]);
-}
-return tree;
-};
+  const toggleAccordion = useCallback((section) => {
+    setAccordionState((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  }, []);
 
-const formatJson = (jsonStr, setter, field) => {
-try {
-if (!jsonStr.trim()) {
-Swal.fire({ 
-icon: 'Warning',
-title: 'Oops...',
-text: 'Please enter JSON to format',
-});
-return;
-}
+  const addHeader = useCallback(() => {
+    if (headerKey.trim() && headerValue.trim()) {
+      setHeaders((prev) => [
+        ...prev,
+        { key: headerKey.trim(), value: headerValue.trim() },
+      ]);
+      setHeaderKey("");
+      setHeaderValue("");
+    }
+  }, [headerKey, headerValue]);
 
-const parsed = JSON.parse(jsonStr);
-const pretty = JSON.stringify(parsed, null, 2);
-setter(pretty);
+  const bulkAddHeaders = useCallback(() => {
+    if (bulkHeaders.trim()) {
+      const newHeaders = bulkHeaders
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.includes(":"))
+        .map((line) => {
+          const idx = line.indexOf(":");
+          return {
+            key: line.slice(0, idx).trim(),
+            value: line.slice(idx + 1).trim(),
+          };
+        });
+      setHeaders((prev) => [...prev, ...newHeaders]);
+      setBulkHeaders("");
+    }
+  }, [bulkHeaders]);
 
-if (field === 'request') {
-setParsedRequestBody(parsed);
+  const clearAll = useCallback(() => {
+    setServiceName("");
+    setApiEndpoint("");
+    setRequestType("GET");
+    setHeaderKey("");
+    setHeaderValue("");
+    setHeaders([]);
+    setBulkHeaders("");
+    setRequestBody("");
+    setResponseBody("");
+    setErrorResponseBody("");
+    setResponseCode("200");
+    setGeneratedCode("");
+    setStepDefinition("");
+    setFeatureFile("");
+    setIsRequestBodyFormatted(false);
+    setViewMode({
+      request: "edit",
+      response: "edit",
+      error: "edit",
+    });
+    setParsedRequestBody({});
+    setSelectedRequestFields([]);
+    setAccordionState({
+      requestBody: false,
+      successResponse: false,
+      errorResponse: false,
+      bulkHeaders: false,
+    });
+    setCurrentStep(1); // Reset to first step on clear
+  }, []);
 
-// Get all leaf paths (fields)
-const allPaths = getAllFieldPaths (parsed);
-setSelectableRequestTree(buildTree(parsed));
-setSelectedRequestFields(allPaths); // all checked initially 
-setIsRequestBodyFormatted(true);
-}
+  const buildTree = useCallback((obj) => {
+    if (typeof obj !== "object" || obj === null || Array.isArray(obj))
+      return true; // Leaf node or array
+    const tree = {};
+    for (const key in obj) {
+      tree[key] = buildTree(obj[key]);
+    }
+    return tree;
+  }, []);
 
-setViewMode({ ...viewMode, [field]: 'view' });
-} catch (e)  {
-Swal.fire({
-icon: 'error',
-title: 'Invalid JSON',
-text:  `please check your input. \n Error: ${e.message} `,
-});
-}
-};
+  const getAllFieldPaths = useCallback((obj, path = "") => {
+    let paths = [];
+    for (const [key, value] of Object.entries(obj)) {
+      const fullPath = path ? `${path}.${key}` : key;
+      if (
+        value !== null &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      ) {
+        paths = paths.concat(getAllFieldPaths(value, fullPath));
+      } else {
+        paths.push(fullPath);
+      }
+    }
+    return paths;
+  }, []);
 
+  const formatJson = useCallback(
+    (jsonStr, setter, field) => {
+      try {
+        if (!jsonStr.trim()) {
+          Swal.fire({
+            icon: "warning",
+            title: "Oops...",
+            text: "Please enter JSON to format",
+          });
+          return;
+        }
 
+        const parsed = JSON.parse(jsonStr);
+        const pretty = JSON.stringify(parsed, null, 2);
+        setter(pretty);
 
-const toggleField = (key) => {
-setSelectedRequestFields(prev => 
-prev.includes(key) ? prev.filter(k => k !== key) : [...prev,key]
-);
-};
+        if (field === "request") {
+          setParsedRequestBody(parsed);
+          const allPaths = getAllFieldPaths(parsed);
+          setSelectedRequestFields(allPaths); // all checked initially
+          setIsRequestBodyFormatted(true);
+        }
 
-const toggleEditMode =  (field) => {
-setViewMode({ ...ViewMode, [field]: 'edit' });
-};
+        setViewMode((prev) => ({ ...prev, [field]: "view" }));
+      } catch (e) {
+        Swal.fire({
+          icon: "error",
+          title: JSON_PARSE_ERROR_TITLE,
+          text: `${JSON_PARSE_ERROR_TEXT} ${e.message}`,
+        });
+      }
+    },
+    [getAllFieldPaths]
+  );
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+  const toggleField = useCallback((key) => {
+    setSelectedRequestFields((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }, []);
 
-const detectType = (value) => {
-if (Array.isArray(value)) {
-if (value.length === 0) return "List<Object>";
-return "List<" + detectType(value[0]) + ">";
-}
-if (value === null) return "Object";
-switch (typeof value) {
-case 'number':
-    return Number.isInteger(value) ? "int" : "double";
-case "boolean":
-return "boolean";
-case "object":
-return null;
-default:
-return "String";
-}
-};
+  const toggleEditMode = useCallback((field) => {
+    setViewMode((prev) => ({ ...prev, [field]: "edit" }));
+  }, []);
 
-function generateClass(name, jsonObj, indent = '   ') {
-let classCode = `
+  const capitalize = useCallback(
+    (str) => str.charAt(0).toUpperCase() + str.slice(1),
+    []
+  );
+
+  const detectType = useCallback((value) => {
+    if (Array.isArray(value)) {
+      if (value.length === 0) return "List<Object>";
+      const itemType = detectType(value[0]);
+      return itemType ? `List<${itemType}>` : "List<Object>"; // Handle nested objects in lists
+    }
+    if (value === null) return "Object";
+    switch (typeof value) {
+      case "number":
+        return Number.isInteger(value) ? "int" : "double";
+      case "boolean":
+        return "boolean";
+      case "object":
+        return null; // Indicates a nested object
+      default:
+        return "String";
+    }
+  }, []);
+
+  const generateClass = useCallback(
+    (name, jsonObj, indent = "    ") => {
+      let classCode = `
 @Data
 public static class ${name} {\n`;
-let nestedClasses = '';
+      let nestedClasses = "";
 
-for (const [key, value] of Object.entries(jsonObj)) {
-    let type = detectType(value);
+      for (const [key, value] of Object.entries(jsonObj)) {
+        let type = detectType(value);
+
+        if (type === null) {
+          // Nested object
+          const nestedClassName = capitalize(key);
+          const nestedCode = generateClass(
+            nestedClassName,
+            value,
+            indent + "    "
+          );
+          type = nestedClassName;
+          nestedClasses +=
+            "\n" +
+            nestedCode
+              .split("\n")
+              .map((line) => indent + line)
+              .join("\n") +
+            "\n";
+        } else if (
+          type.startsWith("List<") &&
+          Array.isArray(value) &&
+          value.length > 0 &&
+          typeof value[0] === "object"
+        ) {
+          // List of objects
+          const nestedClassName = capitalize(key);
+          const nestedCode = generateClass(
+            nestedClassName,
+            value[0],
+            indent + "    "
+          );
+          type = `List<${nestedClassName}>`;
+          nestedClasses +=
+            "\n" +
+            nestedCode
+              .split("\n")
+              .map((line) => indent + line)
+              .join("\n") +
+            "\n";
+        }
+
+        // Apply @JsonProperty conditionally for specific classes
+        const jsonPropertyAnnotation =
+          name === "ErrorResponseData" || name === "SuccessResponseData"
+            ? `@JsonProperty(value="${key}")\n${indent}`
+            : indent;
+
+        classCode += `${jsonPropertyAnnotation}private ${type} ${camelCase(
+          key
+        )};\n`;
+      }
+
+      classCode += "\n" + nestedClasses + "}\n";
+      return classCode;
+    },
+    [capitalize, detectType]
+  );
+
+  const filterJsonBySelection = useCallback((obj, selectedPaths) => {
+    const result = Array.isArray(obj) ? [] : {};
+    for (const key in obj) {
+      const fullPath = selectedPaths.find(
+        (path) => path === key || path.startsWith(`${key}.`)
+      );
+      if (fullPath) {
+        if (typeof obj[key] === "object" && obj[key] !== null) {
+          // Recursively filter if it's an object or array
+          result[key] = filterJsonBySelection(
+            obj[key],
+            selectedPaths
+              .map((path) => path.replace(`${key}.`, ""))
+              .filter(Boolean)
+          );
+        } else {
+          // It's a primitive, just include it
+          result[key] = obj[key];
+        }
+      }
+    }
+    return result;
+  }, []);
+
+  const flattenJson = useCallback((obj, prefix = "") => {
+    const result = {};
+    for (const key in obj) {
+      const value = obj[key];
+      const newKey = prefix ? `${prefix}.${key}` : key;
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        Object.assign(result, flattenJson(value, newKey));
+      } else {
+        result[newKey] = value === "" ? `<Add ${newKey} here>` : value;
+      }
+    }
+    return result;
+  }, []);
+
+  const formatJsonToTable = useCallback(
+    (inputJson) => {
+      const flatJson = flattenJson(inputJson);
+      const headers = Object.keys(flatJson);
+      const placeholders = headers.map((key) => `<${key}>`);
+      return `|${headers.join("|")}|\n|${placeholders.join("|")}|`;
+    },
+    [flattenJson]
+  );
+
+  const formatJsonToExample = useCallback(
+    (inputJson) => {
+      const flatJson = flattenJson(inputJson);
+      const headers = Object.keys(flatJson);
+      const values = Object.values(flatJson);
+      return `|${headers.join("|")}|\n|${values.join("|")}|`;
+    },
+    [flattenJson]
+  );
+
+  const formatJsonToErrorExample = useCallback(
+    (inputJson) => {
+      const flatJson = flattenJson(inputJson);
+      const headers = Object.keys(flatJson).concat([
+        "errorCode",
+        "errorMessage",
+      ]);
+      const values = Object.values(flatJson).concat([
+        "yourErrorCode",
+        "yourErrorMessage",
+      ]);
+      return `|${headers.join("|")}|\n|${values.join("|")}|`;
+    },
+    [flattenJson]
+  );
+
+  const generateUserInputMap = useCallback((payLoad) => {
+    let code = "";
+    for (const key in payLoad) {
+      const value = payLoad[key];
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        for (const nestedKey in value) {
+          code += `          ((JSONObject)reqBody.get("${key}")).put("${nestedKey}", payLoad.get("${key}").get("${nestedKey}"));\n`;
+        }
+      } else {
+        code += `        reqBody.put("${key}", payLoad.get("${key}"));\n`;
+      }
+    }
+    return code;
+  }, []);
+
+  const generateCode = useCallback(() => {
+    if (!serviceName.trim()) {
+      Swal.fire({
+        icon: "error",
+        title: MISSING_INFO_TITLE,
+        text: "Please enter Service Name.",
+      });
+      return;
+    }
+    if (!apiEndpoint.trim()) {
+      Swal.fire({
+        icon: "error",
+        title: MISSING_INFO_TITLE,
+        text: "Please enter API Endpoint URL.",
+      });
+      return;
+    }
+    if (!isRequestBodyFormatted && requestBody.trim()) {
+      // Only require formatting if a body exists
+      Swal.fire({
+        icon: "error",
+        title: FORMATTING_ERROR_TITLE,
+        text: "Please format the Request Body.",
+      });
+      return;
+    }
+
+    let requestPojoClasses = "";
+    let responsePojoClasses = "";
+    let errorResponsePojoClasses = "";
+    let templateTableString = "";
+    let exampleTableString = "";
+    let exampleErrorTablestring = "";
+    let userInputMap = "";
+    let selectedDefaults = undefined;
 
     
-    if (type === null) {
-        const nestedClassName = capitalize(key);
-        const nestedCode = generateClass(nestedClassName, value, indent +'   ');
-        type = nestedClassName;
-        nestedClasses += '\n' + nestedCode.split('\n').map(line => indent + line).join('\n')+ '\n';
-    } else if (type.startsWith("List<") && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
-        const nestedClassName = capitalize(key);
-        const nestedCode = generateClass(nestedClassName, value[0],indent + '   ');
-        type = `List<${nestedClassName}>`;
-        nestedClasses += '\n' + nestedCode.split('\n').map(line => indent + line).join('\n') + '\n';
-    }   
-    if(name == "ErrorresponseData" && name === "SuccessResponseData") {
-        classCode +=`
-        @JsonProperty(value="${key}")
-        ${indent}private ${type} ${camelCase(key)};\n`;
-    }else{
-        classCode += `${indent}private ${type} ${key};\n`;
+    try {
+    setCurrentStep(3); // Move to the Final Step
+
+      if (requestBody.trim()) {
+        const rawRequestObj = JSON.parse(requestBody);
+        // Filter the raw request object based on selected fields
+        const filteredRequestObj = filterJsonBySelection(
+          rawRequestObj,
+          selectedRequestFields
+        );
+        requestPojoClasses = generateClass("RequestBody", rawRequestObj); // Generate POJO for full request body
+        selectedDefaults = filteredRequestObj; // Use filtered object for tables/maps
+
+        if (Object.keys(selectedDefaults).length > 0) {
+          templateTableString =
+            requestType === "GET"
+              ? ""
+              : "\n" + formatJsonToTable(selectedDefaults);
+          exampleTableString =
+            requestType === "GET"
+              ? ""
+              : "\nExamples:\n" + formatJsonToExample(selectedDefaults);
+          exampleErrorTablestring =
+            requestType === "GET"
+              ? ""
+              : "\nExamples:\n" + formatJsonToErrorExample(selectedDefaults);
+          userInputMap = generateUserInputMap(selectedDefaults);
+        }
+      }
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: JSON_PARSE_ERROR_TITLE,
+        text: `${JSON_PARSE_ERROR_TEXT} ${e.message}`,
+      });
+      return;
     }
 
-}
-
-classCode += '\n' +nestedClasses+'}\n';
-
-return classCode;
-}
-
-const generateCode = () => {
-if (!serviceName.trim()) {
-Swal.fire({
-icon: 'error',
-title: 'Missing Information',
-text: 'please enter Service Name',
-});
-return;
-}
-if (!apiEndpoint.trim()) {
-Swal.fire({
-icon: 'error',
-title: 'Missing Information',
-text: 'please enter API Endpoint URL',
-});
-return;
-}
-if (!isRequestBodyFormatted){
-Swal.fire({
-icon: 'error',
-title: 'Formatting Error',
-text: 'please Format Request Body',
-});
-return;
-}
-
-let requestPojoClasses = {};
-let responsePojoClasses = {};
-let errorResponsePojoClasses = {};
-
-
-const filterJsonBySelection = (obj, tree) => {
-    if (typeof obj !== 'object' || obj === null || typeof tree !== 'object') return obj; 
-    const result = {};
-    for (const key in obj) {
-    if (tree[key]) {
-        if (typeof tree[key] === 'object') {
-            result[key] = filterJsonBySelection(obj[key], tree[key]);
-    } else {
-        result[key] = obj[key];
+    try {
+      responsePojoClasses = responseBody.trim()
+        ? generateClass("SuccessResponseData", JSON.parse(responseBody))
+        : "";
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: JSON_PARSE_ERROR_TITLE,
+        text: `${JSON_PARSE_ERROR_TEXT} in Response Body: ${e.message}`,
+      });
+      return;
     }
-}
-}
-return result;
-};
 
-try {
-// const rawRequestObj = Json.parse(requestBody);
-const rawRequestObj = JSON.parse(requestBody);
-requestPojoClasses = generateClass("RequestBody", rawRequestObj);
-const isPathSelected = (path) => selectedRequestFields.includes(path);
-const extractDefaultsBySelectedFields = (obj, path = '') => {
-    if (typeof obj !== 'object' || obj === null) {
-    // Leaf node, return if selected 
-    if (isPathSelected(path)) return obj;
-    return undefined;
-}
-
-// Object node
-const result = Array.isArray(obj) ? [] : {};
-for (const key in obj) {
-const fullpath = path ? '${path}.${key}' : key;
-const filteredValue = extractDefaultsBySelectedFields(obj[key], fullpath );
-if (filteredValue !== undefined) {
-result[key] = filteredValue;
-}
-}
-
-// If result is empty object/array, return undefined to exclude it 
-if (
-(Array.isArray(result) && result.length === 0) ||
-(typeof result === 'object' && Object.keys(result).length === 0)
-) {
-return undefined;
-}
-
-return result;
-};
-const selectedDefaults = extractDefaultsBySelectedFields(rawRequestObj);
-console.log("Defaults to apply from selection:", selectedDefaults);
-
-function flattenJson(obj, prefix = '') {
-    const result = {};
-    for (const key in obj) {
-        const value = obj[key];
-        const newKey = prefix ? `${prefix}.${key}` : key;
-        if (typeof Value === 'object' && value !== null && !Array.isArray(value)){
-        
-            Object.assign(result, flattenJson(value, newKey));
-
-} else {
-    if(value=="")
-    {
-        result[newKey] = '<Add'+newKey+'here>';
+    try {
+      errorResponsePojoClasses = errorResponseBody.trim()
+        ? generateClass("ErrorResponseData", JSON.parse(errorResponseBody))
+        : "";
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: JSON_PARSE_ERROR_TITLE,
+        text: `${JSON_PARSE_ERROR_TEXT} in Error Response Body: ${e.message}`,
+      });
+      return;
     }
-    else{
-    result[newKey] = value;
-    }
-}
-    }
-return result;
-}
 
-function formatJsonToTable(inputJson) {
-const flatJson = flattenJson(inputJson);
-const headers = Object.keys(flatJson);
-const placeholders = headers.map(key => `<${key}>`);
-return `|${headers.join("|")}|\n|${placeholders.join("|")}|`;
-}
+    const headerString = headers
+      .map((h) => `headers.put("${h.key}", "${h.value}");`)
+      .join("\n");
+    const methodLower = requestType.toLowerCase();
 
-function formatJsonToExample(inputJson) {
-const flatJson = flattenJson(inputJson);
-const headers = Object.keys(flatJson);
-const values = Object.values(flatJson);
-return `|${headers.join("|")}|\n|${values.join("|")}|`;
-}
-
-function formatJsonToErrorExample(inputJson) {
-const flatJson = flattenJson(inputJson);
-// const headers = object.keys(flatJson);
-const headers = Object.keys(flatJson).concat(["errorCode", "errorMessage"]);
-
-
-const values = Object.values(flatJson).concat(["yourErrorCode", "youErroeMessage"]);
-return `|${headers.join("|")}|\n|${values.join("|")}|`;
-}
-
-function generateUserInputMap(payLoad) {
-let code = '';
-const reqBodykeys = [];
-
-for (const key in payLoad) {
-const value = payLoad[key];
-
-if (typeof value === 'object' && value !== null && !Array.isArray(value)){
-// Nested object (e.g., accountDetails)
-// code += 'reqBody.put("${key}", new JSONObject());\n';
-for (const nestedkey in value) {
-code += `          ((JSONObject)reqBody.get('${key}")).put("${nestedkey}", payLoad.get("${key}").get("${nestedkey}"));\n`;
-}
-} else {
-// Top-level key 
-code += `reqBody.put("${key}", payLoad.get("${key}"));\n`;
-}
-}
-
-return code;
-}
-
-selectedCheckBoxes =selectedDefaults;
-
-console.log(formatJsonToTable(selectedDefaults));
-console.log(formatJsonToExample(selectedDefaults));
-console.log(generateUserInputMap(selectedDefaults));
-
-if(selectedDefaults!=undefined){
-templateTableString = (requestType==='GET')?'':'\n'+formatJsonToTable(selectedDefaults);
-exampleTableString = (requestType==='GET')?'':'\nExamples:\n'+formatJsonToExample(selectedDefaults);
-exampleErrorTablestring = (requestType==='GET')?"":'\nExamples:\n'+formatJsonToErrorExample(selectedDefaults);
-console.log(exampleErrorTablestring);
-userInputMap = generateUserInputMap(selectedDefaults);
-}
- } catch {
-
-
-Swal.fire({
-
-icon: 'error',
-title: 'Invalid JSON',
-text: 'Invalid JSON in Request Body',
-});
-
-return;
-}
-
-
-try {
-responsePojoClasses = responseBody.trim()
-? generateClass("SuccessResponseData", JSON.parse(responseBody))
-: '';
-} catch {
-Swal.fire({
-icon: 'error',
-title: 'Invalid JSON',
-text: 'Invalid JSON in Response Body',
-});
-return;
-}
-
-try {
-errorResponsePojoClasses = errorResponseBody.trim()
-? generateClass("ErrorResponseData", JSON.parse(errorResponseBody))
-: '';
-} catch {
-Swal.fire({
-icon: 'error',
-title: 'Invalid JSON',
-text: 'Invalid JSON in Response Body',
-});
-return;
-}
-
-const requestPojo = requestPojoClasses;
-const responsePojo = responsePojoClasses;
-const errorResponsePojo = errorResponsePojoClasses;
-
-const headerString = headers
-.map(h => 'headers.put("'+`${h.key}","${h.value}");`)
-.join('\n');
-
-const methodLower = requestType.toLowerCase();
-
-const postMethodCode =`
+    const postMethodCode = `
 public Response ${methodLower}() throws JsonProcessingException {
-RequestSpecification requestSpecification = baseRequestSpec()
-.headers(setupHeaders())
-.body(requestBody(), ObjectMapperType.GSON);
-setResponse(${methodLower}(requestSpecification, endPointUrl));
-return getResponse();
+    RequestSpecification requestSpecification = baseRequestSpec()
+        .headers(setupHeaders())
+        .body(requestBody(), ObjectMapperType.GSON);
+    setResponse(${methodLower}(requestSpecification, endPointUrl));
+    return getResponse();
 }`;
 
-const getMethodCode = `
+    const getMethodCode = `
 public Response ${methodLower}() throws JsonProcessingException {
-RequestSpecification requestSpecification = baseRequestSpec()
-.headers(setupHeaders());
-setResponse(${methodLower}(requestSpecification, endPointUrl));
-return getResponse();
-)`;
+    RequestSpecification requestSpecification = baseRequestSpec()
+        .headers(setupHeaders());
+    setResponse(${methodLower}(requestSpecification, endPointUrl));
+    return getResponse();
+}`;
 
-let methodCode=requestType==='GET'?getMethodCode:postMethodCode;
+    let methodCode = requestType === "GET" ? getMethodCode : postMethodCode;
 
-const requestCode = `String requestBody = """\n ${requestBody} """;`;
-
-const maincode = `
+    const mainCode = `
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.restassured.mapper.objectMapperType;
+import io.restassured.mapper.ObjectMapperType;
 import com.fasterxml.jackson.databind.MapperFeature;
 import lombok.SneakyThrows;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
 import org.ocbcqa.core.base.service.BaseRestService;
 import java.lang.reflect.Type;
 import java.net.URL;
@@ -546,113 +587,102 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.simple.parser.ParseException;
 import org.json.simple.parser.JSONParser;
 import java.net.MalformedURLException;
-import org.com.core.report.Logger;
+import org.ocbcqa.core.report.Logger;
 
 
 public class ${capitalize(serviceName)} extends BaseRestService {
-String endPointUrl = "${apiEndpoint}";
-SuccessResponseData successResponseBody;
-ErrorResponseData errorResponseData;
-RequestBody finalRequestBody;
+    String endPointUrl = "${apiEndpoint}";
+    SuccessResponseData successResponseBody;
+    ErrorResponseData errorResponseData;
+    RequestBody finalRequestBody;
 
 
-private HashMap<String, String> setupHeaders() {
-HashMap<String, String> headers = new HashMap<>();
-${headerString}
-return headers;
-}
+    private HashMap<String, String> setupHeaders() {
+        HashMap<String, String> headers = new HashMap<>();
+        ${headerString}
+        return headers;
+    }
 
-@SneakyThrows
-public RequestBody requestBody() throws JsonProcessingException {
-ObjectMapper objectMapper = new ObjectMapper();
-objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-return finalRequestBody= new ObjectMapper().readValue(requestBody, RequestBody.class);
-}
+    @SneakyThrows
+    public RequestBody requestBody() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        return finalRequestBody = objectMapper.readValue(requestBody, RequestBody.class);
+    }
 
-
-
-@SneakyThrows
-public RequestBody requestBody(Map<String, String> payLoad) throws JsonProcessingException,ParseException {
-JSONObject reqBody = (JSONObject) new JSONParser().parse(requestBody);
+    @SneakyThrows
+    public RequestBody requestBody(Map<String, String> payLoad) throws JsonProcessingException, ParseException {
+        JSONObject reqBody = (JSONObject) new JSONParser().parse(requestBody);
 ${userInputMap}
-ObjectMapper objectMapper = new ObjectMapper();
-objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-return new ObjectMapper().readValue(reqBody.toString(), RequestBody.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        return objectMapper.readValue(reqBody.toString(), RequestBody.class);
+    }
 
-}
+    public ${capitalize(serviceName)}() {
+        try {
+            String appUrl = appConfig.get("applicationName", "applicationKey");
+            hostAddress = new URL(appUrl);
+        } catch (MalformedURLException muException) {
+            throw new RuntimeException(muException.getMessage());
+        }
+    }
 
-public ${capitalize(serviceName)}() {
-try {
-String appUrl = appConfig.get("applicationName", "applicationKey");
-hostAddress= new URL(appUrl);
-} catch (MalformedURLException muException) {
-throw new Runt imeException(muException.getMessage());
-}
-}
+    ${methodCode}
 
+    public void serializeSuccessResponse() {
+        setSuccessResponseBody(response.getBody().as(SuccessResponseData.class, ObjectMapperType.GSON));
+    }
 
+    public void setSuccessResponseBody(SuccessResponseData successResponseBody) {
+        this.successResponseBody = successResponseBody;
+    }
 
-${methodCode}
+    public void serializeErrorResponse() {
+        setErrorResponseBody(response.getBody().as(ErrorResponseData.class, ObjectMapperType.GSON));
+    }
 
-public void serializeSuccessResponse() {
-setSuccessResponseBody(response.getBody().as(SuccessResponseData.class, ObjectMapperType.GSON));
-}
+    public void setErrorResponseBody(ErrorResponseData errorResponseData) {
+        this.errorResponseData = errorResponseData;
+    }
 
-public void setSuccessResponseBody(SuccessResponseData successResponseBody)
-this.sucessResponseBody = successResponseBody;
-}
+    public SuccessResponseData getSuccessResponseData(Response response) {
+        return response.as(SuccessResponseData.class);
+    }
 
-public void serializeErrorResponse() {
-setErrorResponseBody(response.getBody().as(ErrorResponseData.class, objectMapperType.GSON));
-}
+    public ErrorResponseData getErrorResponseData(Response response) {
+        return response.as(ErrorResponseData.class);
+    }
 
-public void setErrorResponseBody(ErrorResponseData errorResponseData) {
-this.errorResponseData = errorResponseData;
-}
+    public void validateSuccessResponseSchema() {
+        validateAgainstSchema(SuccessResponseData.class);
+    }
 
-public SuccessResponseData getSuccessResponseData(Response response) {
-return response.as(SuccessResponseData.class);
-}
-
-public ErrorResponseData getErrorResponseData(Response response) {
-return response.as(ErrorResponseData.class);
-}
-
-public void validateSuccessResponseSchema() {
-validateAgainstSchema(SuccessResponseData.class);
-}
-
-public void validateErrorResponseSchema() {
-validateAgainstSchema(ErrorResponseData.class);
-}
-
+    public void validateErrorResponseSchema() {
+        validateAgainstSchema(ErrorResponseData.class);
+    }
 `;
-const get =`public void sendRequestToServiceEndpoint() {`;
 
-const post =`public void sendRequestToServiceEndpoint(DataTable dt) throws JsonProcessingException, ParseException {
-List<Map<String, String>> userData= dt.asMaps(String.class, String.class);
-${serviceName.toLowerCase()}.requestBody(userData.get (0)); `;
+    let getOrPostStep = `public void sendRequestToServiceEndpoint() {`;
+    let scenarioType = "Scenario";
 
-const postNoselectedDefaults =`public void sendRequestToServiceEndpoint() throws JsonProcessingException, ParseException {
-${serviceName.toLowerCase()}.requestBody();`;
+    if (
+      requestType === "POST" ||
+      requestType === "PUT" ||
+      requestType === "PATCH"
+    ) {
+      if (selectedDefaults && Object.keys(selectedDefaults).length > 0) {
+        getOrPostStep = `public void sendRequestToServiceEndpoint(DataTable dt) throws JsonProcessingException, ParseException {
+    List<Map<String, String>> userData= dt.asMaps(String.class, String.class);
+    ${camelCase(serviceName)}.requestBody(userData.get(0));`;
+        scenarioType = "Scenario Outline";
+      } else {
+        getOrPostStep = `public void sendRequestToServiceEndpoint() throws JsonProcessingException, ParseException {
+    ${camelCase(serviceName)}.requestBody();`;
+      }
+    }
 
-let getOrPost =requestType==='GET'?get:post;
-if(requestType==='POST')
-    {
-getOrPost =selectedCheckBoxes==undefined?postNoselectedDefaults:post;
-}
-
-let scenario = requestType==='GET'?'Scenario':'Scenario Outline';
-if(requestType==='POST')
-    {
-    scenario = selectedCheckBoxes==undefined?'Scenario':scenario;
-}
-
-
-
-
-const stepDefCode =
-`import io.cucumber.java.en.*;
+    const stepDefCode = `import io.cucumber.java.en.*;
 import io.restassured.response.Response;
 import org.testng.Assert;
 import org.json.simple.parser.ParseException;
@@ -665,1057 +695,842 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 
 public class ${capitalize(serviceName)}Steps extends BaseStep {
-private ${capitalize(serviceName)} ${serviceName.toLowerCase()} = new ${capitalize(serviceName)}();
-customSoftAssert customSoftAssert = new CustomSoftAssert();
-private Response response;
-private ${capitalize(serviceName)}.successResponseData successResponse;	
-private ${capitalize(serviceName)}.ErrorResponseData errorResponse;
+    private ${capitalize(serviceName)} ${camelCase(
+      serviceName
+    )} = new ${capitalize(serviceName)}();
+    CustomSoftAssert customSoftAssert = new CustomSoftAssert();
+    private Response response;
+    private ${capitalize(serviceName)}.SuccessResponseData successResponse; 
+    private ${capitalize(serviceName)}.ErrorResponseData errorResponse;
 
-@Given("the user send ${requestType.toLowerCase()} request to ${serviceName} service *****************************
-${getOrPost}
-response = ${serviceName.toLowerCase()}.${methodLower}();
-Logger.info(response.prettyPrint());
-}
+    @Given("the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint")
+    ${getOrPostStep}
+        response = ${camelCase(serviceName)}.${methodLower}();
+        Logger.info(response.prettyPrint());
+    }
 
-@Then("the user should get status code as {int}")
-public void verifystatusCode(int exceptedStatusCode) {
-Assert.assertEquals(expectedStatusCode,response.getStatusCode());
-}
+    @Then("the user should get status code as {int}")
+    public void verifystatusCode(int expectedStatusCode) {
+        Assert.assertEquals(expectedStatusCode, response.getStatusCode());
+    }
 
-@Then("the user verify the success schema of the response returned as excepted for ${serviceName} service endpoint")
-public void verifySuccessSchema() {
-${serviceName.toLowerCase()}.serializeSuccessResponse();
-${serviceName.toLowerCase()}.validateSuccessResponseSchema();
-}
+    @Then("the user verify the success schema of the response returned as expected for ${serviceName} service endpoint")
+    public void verifySuccessSchema() {
+        ${camelCase(serviceName)}.serializeSuccessResponse();
+        ${camelCase(serviceName)}.validateSuccessResponseSchema();
+    }
 
+    @And("the user verify the success response body should contain valid data for ${serviceName} service endpoint")
+    public void verifySuccessResponseBody() {
+        // Add specific assertions for success response fields here
+        // Example: customSoftAssert.assertEquals(successResponse.getFieldName());
+    }
 
-@And("the user verify the success response body should contain valid data for ${serviceName} service endpoint")
-public void verifySuccessResponseBody() {
-// Add specific assertions for success response fields here
-// Example: customSoftAssert.assertEquals(successResponse.getFieldName());
-}
+    @Then("the user verify the error schema of the response returned as expected for ${serviceName} service endpoint")
+    public void verifyErrorSchema() {
+        ${camelCase(serviceName)}.serializeErrorResponse();
+        ${camelCase(serviceName)}.validateErrorResponseSchema();
+    }
 
-@Then("the user verify the error schema of the response returned as excepted for ${serviceName} service endpoint")
-public void verifyErrorSchema() {
-${serviceName.toLowerCase()}.serializeErrorResponse();
-${serviceName.toLowerCase()}.validateErrorResponseSchema();
-}
-
-@And("^the user verify the error response body should contain valid data for ${serviceName} service endpoint with (.+) and (.+)$")
-public void verifyErrorResponseBody(String errorCode, String errorMessage) {
-// Add specific assertions for error response fields here
-// Example: customSoftAssert.assertEquals(errorResponse.getErrorMessage(),errorcode);
-}
+    @And("^the user verify the error response body should contain valid data for ${serviceName} service endpoint with (.+) and (.+)$")
+    public void verifyErrorResponseBody(String errorCode, String errorMessage) {
+        // Add specific assertions for error response fields here
+        // Example: customSoftAssert.assertEquals(errorResponse.getErrorMessage(), errorCode);
+    }
 }`;
 
-
-const featureCode = `Feature: ${capitalize(serviceName)} API Tests
-
-${scenario}: Verify successful ${requestType} request to ${serviceName} 
-Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint`+
-templateTableString
-
-+`
-Then the user should get status code as 200
-Then the user verify the success schema of the response returned as excepted for ${serviceName} service endpoint
-And the user verify the success response body should contain valid data for ${serviceName} service endpoint`+
-
-exampleTableString
-
-
-
-+`
-
-
-${scenario}: Verify error response for ${requestType} request to ${serviceName}
-Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint`+
-templateTableString
-+`
-Then the user should get status code as 400
-Then the user verify the error schema of the response returned as excepted for ${serviceName} service endpoint
-And the user verify the error response body should contain valid data for ${serviceName} service endpoint with <errorCode> and <errorMessage>` +
-
-exampleErrorTablestring
-
-;
-
-setGeneratedCode(
-[
-maincode,
-requestPojo ? requestPojo + "\n\n" : "",
-responsePojo ? responsePojo + "\n\n" : "",
-errorResponsePojo ? errorResponsePojo : "",
-requestCode,
-"\n}",
-].join("")
-);
-
-setStepDefinition(stepDefCode);
-setFeatureFile(featureCode);
-
-
-toast.success('Code has been genterated successfully! please scroll down & look for generated code',{
-position: "bottom-center",
-autoClose: 3000,
-hideprogressBar: false,
-closeOnClick: true,
-pauseOnHover: true,
-draggable: true,
-progress: undefined,
-});
-};
-
-
-function formatJsonStringToHeaderText(jsonString) {
-try {
-const jsonObj = JSON.parse(jsonString);
-return Object.entries(jsonObj)
-.map(([key, value]) => `${key}:${value}`)
-.join('\n');
-} catch (error) {
-console.error("Invalid JSON string:", error);
-return "";
-}
-}
-
-const handleData = (data) => {
-
-console.log(data);
-
-if (!data.details.summary) {
-data.details.summary = "untitled";
-}
-
-let successResponses = data.details.responseSamples.success;
-let errorResponses = data.details.responseSamples.failure;
-
-let request = data.details.requestSample==null?'{}':JSON.stringify(data.details.requestSample);
-let response = successResponses.length > 0 ? successResponses[0] : {};
-let errorResponse = errorResponses.length > 0 ? errorResponses[0] : {};
-let successResponseCode = response.statusCode;
-
-console.log("Headers :: "+data.details);
-console.log("RequestBody :: "+data.details.requestSample);
-console.log("Response :: "+data.details.requestSample);
-
-let requestBody = JSON.stringify(data.details.parameters);
-
-setServiceName(camelCase(data.details.summary));
-setApiEndpoint(data.path);
-setRequestType(data.method.toUpperCase());
-setHeaderKey("");
-setHeaderValue("");
-setHeaders([]);
-setBulkHeaders(formatJsonStringToHeaderText(JSON.stringify(data.details.headervalues)));
-setRequestBody(request);
-setResponseBody(JSON.stringify(response));
-setErrorResponseBody(JSON.stringify(errorResponse));
-setResponseCode(successResponseCode);
-
-setAccordionState   ({
-requestBody: true,
-successResponse: true,
-errorResponse: true,
-bulkHeaders: true,
-});
-
-};
-const downloadCode = () => {
-if (!generatedCode) {
-Swal.fire({
-icon: 'error',
-title: 'No Code',
-text: 'No code to download!',
-});
-return;
-}
-const element = document.createElement("a");
-const file = new Blob([generatedCode], {type: "text/plain"});
-element.href = URL.createObjectURL(file);
-element.download = `${capitalize(serviceName) || "GeneratedService"}.java`;
-document.body.appendChild(element);
-element.click();
-document.body.removeChild(element);
-};
-
-    const downloadStepDefinition = () => {
-        if (!stepDefinition) {
-            Swal.fire({
-                icon: 'error',
-                title: 'No Step Definition',
-                text: 'No step definition to download!',
-            });
-            return;
-        }
-        const element = document.createElement("a");
-        const file = new Blob([stepDefinition], { type: "text/plain" });
-        element.href = URL.createObjectURL(file);
-        element.download = `${capitalize(serviceName) || "Generated"}Steps.java`;
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
-    };
-
-    const downloadFeatureFile = () => {
-        if (!featureFile) {
-            Swal.fire({
-                icon: 'error',
-                title: 'No Feature File',
-                text: 'No feature file to download!',
-            });
-            return;
-        }
-        const element = document.createElement("a");
-        const file = new Blob([featureFile], { type: "text/plain" });
-        element.href = URL.createObjectURL(file);
-        element.download = `${capitalize(serviceName) || "Generated"}APITests.feature`;
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
-    };
-
-const renderFieldCheckboxes = (obj, path = '') => {
-return Object.entries(obj).map(([key, value]) => {
-const fullpath = path ? `${path}.${key}` : key;
-if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-return (
-<div key={fullpath} style={{ marginLeft: path ? 20 : 0 }}>
-<strong>{key}</strong>
-<div>{renderFieldCheckboxes(value, fullpath)}</div>
-</div>
-);
-}else {
-return (
-<lable key={fullpath} style={{ display: 'block', marginLeft: path ? 20 : 0 }}>
-<input 
-type="checkbox"
-checked={selectedRequestFields.includes(fullpath)}
-onChange={() => toggleField(fullpath)}
-/> {fullpath}
-</lable>
-);
-}
-});
-};
-
-
-
-const [collapse, setCollapse] = useState ({
-headers: false,
-request: false,
-success: false,
-error: false,
-});
-
-const collapseAllSections = () =>{
-setCollapse({
-headers: false,
-request: false,
-success: false,
-error: false,
-});
-}
-
-const expandAllSections = () =>{
-setCollapse({
-headers: true,
-request: true,
-success: true,
-error: true,
-});
-}
-
-
-const toggleCollapse = (section) => {
-setCollapse({ ...collapse, [section]: !collapse[section] });
-};
-
-const getAllFieldPaths = (obj, path = '') => {
-let paths = [];
-for (const [key, value] of Object.entries(obj)) {
-const fullPath = path ? `${path}.${key}` : key;
-if (value !== null && typeof value === 'object' && !Array.isArray(value)){
-paths = paths.concat(getAllFieldPaths(value, fullPath));
-} else {
-paths.push(fullPath);
-}
-}
-return paths;
-};
-
-const selectAllFields = () => setSelectedRequestFields(getAllFieldPaths(parsedRequestBody));
-const deselectAllFields = () => setSelectedRequestFields([]);
-
-const [selectedRequestFields, setSelectedRequestFields] = useState([]);
-const [parsedRequestBody, setParsedRequestBody] = useState({});
-
-
-
-function copyToClipboard(text) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;      
-    textArea.style.position = 'fixed'; // Prevent scrolling to bottom of page in MS Edge.
-    document.body.appendChild(textArea);    
-    textArea.focus();
-    textArea.select();
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-         toast.success('Code copied to clipboard!', {
-            position: "bottom-center",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-        });
-    }else {
-        toast.success('Failed to copy', {
-            position: "top-center",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-        });
-    }
-    }catch (err) {
-        toast.error('Failed to copy code!', {
-            position: "top-center",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-        });
-    }
-    document.body.removeChild(textArea);
-}
-
-const handleServiceCopy=() => {
-    copyToClipboard(visibleGeneratedCode); 
-};
-
-const handleStepCopy=() => {
-    copyToClipboard(visibleStepDefinition); 
-};
-
-
-const handleFeatureCopy=() => {
-    copyToClipboard(visibleFeatureFile); 
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-return (
-        <div style={{
-            maxWidth: 1200,
-            margin: "30px auto",
-            padding: 20,
-            background: "#fff",
-            borderRadius: 8,
-            boxShadow: "0 6px 15px rgba(0,0,0,0.1)"
-        }}>
-            {/* Toast Container for notifications */}
-            <ToastContainer
-                position="top-left"
-                autoClose={3000}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
-
-            <h2>API Automation Code Generator</h2>
-
-            <div style={{ textAlign: 'right', marginBottom: '10px' }}>
-                <ImportFromSwagger onReset={clearAll} onData={handleData} />
-            </div>
-            <div style={{ marginBottom: 15 }}>
-                <label>Service Name</label>
-                <input
-                    type="text"
-                    value={serviceName}
-                    onChange={(e) => {
-                    const value =e.target.value;
-                    if(!value.includes(" ")){
-                        setServiceName(value);
-                    }
-                    }}
-                    placeholder="Enter service name"
-                    style={{ width: "100%", padding: 8 }}
-                />
-            </div>
-
-            <div style={{ marginBottom: 15 }}>
-                <label>API Endpoint URL</label>
-                <input
-                    type="url"
-                    value={apiEndpoint}
-                    onChange={(e) => setApiEndpoint(e.target.value)}
-                    placeholder="/objects"
-                    style={{ width: "100%", padding: 8 }}
-                />
-            </div>
-
-            <div style={{ marginBottom: 15 }}>
-                <label>Request Type</label>
-                <select
-                    value={requestType}
-                    onChange={(e) => setRequestType(e.target.value)}
-                    style={{ width: "100%", padding: 8 }}
-                >
-                    <option>GET</option>
-                    <option>POST</option>
-                    <option>PUT</option>
-                    <option>DELETE</option>
-                    <option>PATCH</option>
-                    <option>HEAD</option>
-                    <option>OPTIONS</option>
-                </select>
-            </div>
-
-
-                <CollapsibleSection
-                title="Request Headers"
-
-                isOpen={accordionState.bulkHeaders}
-                onToggle={() => toggleAccordion("bulkHeaders") }
-                style={{backgroundColor:"#007BFF"  }}
-                >
-
-                <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
-                    <input
-                        type="text"
-                        placeholder="Header Key"
-                        value={headerKey}
-                        onChange={(e) => setHeaderKey(e.target.value)}
-                        style={{ flex: 1, padding: 8 }}
-                    />
-                    <input
-                        type="text"
-                        placeholder="Header Value"
-                        value={headerValue}
-                        onChange={(e) => setHeaderValue(e.target.value)}
-                        style={{ flex: 1, padding: 8 }}
-                    />
-                    <button
-                        type="button"
-                        onClick={addHeader}
-                        style={{
-                            padding: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "#4CAF50",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer"
-                        }}
-                        title="Add Header"
-                    >
-                        <FaPlus />
-                    </button>
-                </div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                    <textarea
-                        rows={3}
-                        placeholder="Bulk add headers (key:value per line)"
-                        value={bulkHeaders}
-                        onChange={(e) => setBulkHeaders(e.target.value)}
-                        style={{
-                            width: "100%",
-                            fontFamily: "monospace",
-                            padding: 8
-                        }}
-                    />
-                    <button
-                        type="button"
-                        onClick={bulkAddHeaders}
-                        style={{
-                            padding: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: '#ff4444',
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            alignSelf: "flex-start"
-                        }}
-                        title="Bulk Import Headers"
-                    >
-                        <BiSelectMultiple size={16} />
-                    </button>
-                </div>
-
-                {headers.length > 0 && (
-                    <ul style={{ marginTop: 10 }}>
-                        {headers.map((h, i) => (
-                            <li key={i}><b>{h.key}</b>: {h.value}</li>
-                        ))}
-                    </ul>
-                )}
-
-            </CollapsibleSection>
-
-
-            <CollapsibleSection
-                title="Request Body"
-                isOpen={accordionState.requestBody}
-                onToggle={() => toggleAccordion("requestBody")}
-            >
-
-                {viewMode.request === 'view' ? (
-                    <div style={{ position: 'relative' }}>
-                        <SyntaxHighlighter
-                            language="json"
-                            style={vscDarkPlus}
-                            customStyle={{
-                                fontSize: '14px',
-                                borderRadius: '4px',
-                                padding: '16px',
-                                overflowX: 'auto',
-                                backgroundColor: '#1e1e1e'
-                            }}
-                        >
-                            {requestBody}
-                        </SyntaxHighlighter>
-                        <button
-                            onClick={() => toggleEditMode('request')}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                padding: '6px',
-                                background: '#ff4444',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Edit"
-                        >
-                            <FaEdit size={14} />
-                        </button>
-                    </div>
-                ) : (
-                    <textarea
-                        rows={10}
-                        value={requestBody}
-                        onChange={(e) => setRequestBody(e.target.value)}
-                        placeholder="Enter JSON request body here"
-                        style={{
-                            width: "100%",
-                            fontFamily: "monospace",
-                            padding: 8
-                        }}
-                    />
-                )}
-                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    {viewMode.request === 'edit' && (
-                        <button
-                            type="button"
-                            onClick={() => formatJson(requestBody, setRequestBody, 'request')}
-                            style={{ padding: "8px 16px" }}
-                        >
-                            Format JSON
-                        </button>
-                    )}
-                </div>
-                    {viewMode.request === 'view' && Object.keys(parsedRequestBody).length > 0 && ( 
-                        <div style={{marginTop: 10 }}>
-                        <strong>Select Fields:</strong>
-                        <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-                            <button onClick={selectAllFields}>select All </button>
-                            <button onClick={deselectAllFields}>select None</button>
-                        </div>
-                        <div style={{
-                        maxHeight: '250px',
-                        overflowY: 'auto',
-                        padding: '10px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        backgroundColor: '#f9f9f9'
-            }}>
-                          {renderFieldCheckboxes(parsedRequestBody)}
-                          </div>
-                            </div>
-             
-                   ) }                                              
-            </CollapsibleSection>
-
-
-
-
-
-
-            <CollapsibleSection
-                title="Success Response Body"
-                isOpen={accordionState.successResponse}
-                onToggle={() => toggleAccordion("successResponse")}
-            >
-                {viewMode.response === 'view' ? (
-                    <div style={{ position: 'relative' }}>
-                        <SyntaxHighlighter
-                            language="json"
-                            style={vscDarkPlus}
-                            customStyle={{
-                                fontSize: '14px',
-                                borderRadius: '4px',
-                                padding: '16px',
-                                overflowX: 'auto',
-                                backgroundColor: '#1e1e1e'
-                            }}
-                        >
-                            {responseBody}
-                        </SyntaxHighlighter>
-                        <button
-                            onClick={() => toggleEditMode('response')}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                padding: '6px',
-                                background: '#ff4444',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Edit"
-                        >
-                            <FaEdit size={14} />
-                        </button>
-                    </div>
-                ) : (
-                    <textarea
-                        rows={10}
-                        value={responseBody}
-                        onChange={(e) => setResponseBody(e.target.value)}
-                        placeholder="Enter JSON success response body here"
-                        style={{
-                            width: "100%",
-                            fontFamily: "monospace",
-                            padding: 8
-                        }}
-                    />
-                )}
-                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    {viewMode.response === 'edit' && (
-                        <button
-                            type="button"
-                            onClick={() => formatJson(responseBody, setResponseBody, 'response')}
-                            style={{ padding: "8px 16px" }}
-                        >
-                            Format JSON
-                        </button>
-                    )}
-                </div>
-            </CollapsibleSection>
-
-
-            <CollapsibleSection
-                title="Error Response Body"
-                isOpen={accordionState.errorResponse}
-                onToggle={() => toggleAccordion("errorResponse")}
-            >
-
-                {viewMode.error === 'view' ? (
-                    <div style={{ position: 'relative' }}>
-
-
-                        <SyntaxHighlighter
-                            language="json"
-                            style={vscDarkPlus}
-                            customStyle={{
-                                fontSize: '14px',
-                                borderRadius: '4px',
-                                padding: '16px',
-                                overflowX: 'auto',
-                                backgroundColor: '#1e1e1e'
-
-
-                            }}
-                        >
-                            {errorResponseBody}
-                        </SyntaxHighlighter>
-                        <button
-                            onClick={() => toggleEditMode('error')}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                padding: '6px',
-                                background: '#ff4444',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Edit"
-                        >
-                            <FaEdit size={14} />
-                        </button>
-                    </div>
-                ) : (
-                    <textarea
-                        rows={10}
-                        value={errorResponseBody}
-                        onChange={(e) => setErrorResponseBody(e.target.value)}
-                        placeholder="Enter JSON error response body here"
-                        style={{
-                            width: "100%",
-                            fontFamily: "monospace",
-                            padding: 8
-                        }}
-                    />
-                )}
-                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    {viewMode.error === 'edit' && (
-                        <button
-                            type="button"
-                            onClick={() => formatJson(errorResponseBody, setErrorResponseBody, 'error')}
-                            style={{ padding: "8px 16px" }}
-                        >
-                            Format JSON
-                        </button>
-                    )}
-                </div>
-            </CollapsibleSection>
-
-            <div style={{ marginBottom: 15 }}>
-                <label>Response Code</label>
-                <select
-                    value={responseCode}
-                    onChange={(e) => setResponseCode(e.target.value)}
-                    style={{ width: "100%", padding: 8 }}
-                >
-                    {[100, 101, 102, 200, 201, 202, 204, 400, 401, 403, 404, 500, 502, 503].map((code) => (
-                        <option key={code} value={code}>{code}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div style={{ marginBottom: 20, display: "flex", gap: 8 }}>
-                <button
-                    type="button"
-                    onClick={generateCode}
-                    style={{
-                        padding: "10px 16px",
-                        background: "#4CAF50",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px"
-                    }}
-                >
-                    <FaCode /> Generate Code
-                </button>
-                <button
-                    type="button"
-                    onClick={clearAll}
-                    style={{
-                        padding: "10px 16px",
-                        background: "#f44336",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px"
-                    }}
-                >
-                    <FaTrash /> Clear All
-                </button>
-            </div>
-
-            {generatedCode && (
-                <fieldset style={{ marginBottom: 20, padding: 15 }}>
-                    <legend>Generated Java Service Code</legend>
-                    <SyntaxHighlighter
-                        language="java"
-                        style={vscDarkPlus}
-                        showLineNumbers={true}
-                        customStyle={{
-                            fontSize: '14px',
-                            borderRadius: '4px',
-                            padding: '16px',
-                            overflowX: 'auto',
-                            backgroundColor: '#1e1e1e'
-                        }
-                    }
-                    >
-                        {/* {generatedCode} */}
-                        {visibleGeneratedCode}
-                    </SyntaxHighlighter>
-
-                    <div style={{display:"inline-flex", gap: '10px', marginTop: 10}}>
-                    <button
-                        type="button"
-                        onClick={downloadCode}
-                        style={{
-                            padding: "8px 16px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px"
-                        }}
-                    >
-                        <FaDownload /> Download Service Code
-                    </button>
-                    <button
-                        onClick={handleServiceCopy}
-                        style={{
-                            padding: "8px 2px",
-                            color:"white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                        }}
-                    >
-                        <FaCopy /> Copy Code
-                    </button>
-                    </div>
-                </fieldset>
-            )}
-
-            {stepDefinition && (
-                <fieldset style={{ marginBottom: 20, padding: 15 }}>
-                    <legend>Step Definition File</legend>
-                    <SyntaxHighlighter
-                        language="java"
-                        style={vscDarkPlus}
-                        showLineNumbers={true}
-                        customStyle={{
-                            fontSize: '14px',
-                            borderRadius: '4px',
-                            padding: '16px',
-                            overflowX: 'auto',
-                            backgroundColor: '#1e1e1e'
-                        }}
-                    >
-                        {/* {stepDefinition} */}
-                        {visibleStepDefinition}
-                    </SyntaxHighlighter>
-
-                    <div style={{display:"inline-flex", gap: '10px', marginTop: 10}}>
-
-                    <button
-                        type="button"
-                        onClick={downloadStepDefinition}
-                        style={{
-
-                            padding: "8px 16px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px"
-                        }}
-                    >
-                        <FaDownload /> Download Step Definition
-                    </button>
-                    <button
-                        onClick={handleStepCopy}
-                        style={{
-                            padding: "8px 2px",
-                            color:"white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-
-                        }}
-                    >
-                        <FaCopy /> Copy Code
-                    </button>
-                    </div>
-                </fieldset>
-            )}
-
-            <div style={{ overflow:'auto',maxWidth:'100%' }}>
-            {featureFile && (
-                <fieldset style={{ marginBottom: 20, padding: 15 }}>
-                    <legend>Feature File</legend>
-                    <SyntaxHighlighter
-                        language="gherkin"
-                        style={vscDarkPlus}
-                        showLineNumbers={true}
-                        customStyle={{
-                            fontSize: '14px',
-                            borderRadius: '4px',
-                            padding: '16px',
-                            overflowX: 'auto',
-                            backgroundColor: '#1e1e1e'
-                        }}
-                    >
-                        {/* {featureFile} */}
-                        {visibleFeatureFile}
-                    </SyntaxHighlighter>
-                     <div style={{display:"inline-flex", gap: '10px', marginTop: 10}}>
-
-                    <button
-                        type="button"
-                        onClick={downloadFeatureFile}
-                        style={{
-                            padding: "8px 16px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px"
-                        }}
-                    >
-                        <FaDownload /> Download Feature File
-                    </button>
-                    <button
-                        onClick={handleFeatureCopy}
-                        style={{
-                            padding: "8px 2px",
-                            color:"white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-
-                        }}
-                    >
-                        <FaCopy /> Copy Code
-                    </button>
-                    </div>
-
-                </fieldset>
-            )}
-        </div>
-
-</div>
+    const featureCode = `Feature: ${capitalize(serviceName)} API Tests
+
+${scenarioType}: Verify successful ${requestType} request to ${serviceName} 
+    Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint${templateTableString}
+    Then the user should get status code as 200
+    And the user verify the success schema of the response returned as expected for ${serviceName} service endpoint
+    And the user verify the success response body should contain valid data for ${serviceName} service endpoint${exampleTableString}
+
+${scenarioType}: Verify error response for ${requestType} request to ${serviceName}
+    Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint${templateTableString}
+    Then the user should get status code as 400
+    And the user verify the error schema of the response returned as expected for ${serviceName} service endpoint
+    And the user verify the error response body should contain valid data for ${serviceName} service endpoint with <errorCode> and <errorMessage>${exampleErrorTablestring}
+`;
+
+    setGeneratedCode(
+      [
+        mainCode,
+        requestPojoClasses ? requestPojoClasses + "\n" : "",
+        responsePojoClasses ? responsePojoClasses + "\n" : "",
+        errorResponsePojoClasses ? errorResponsePojoClasses : "",
+        `String requestBody = """\n${requestBody}\n""";`,
+        "\n}",
+      ].join("")
     );
-}
 
+    setStepDefinition(stepDefCode);
+    setFeatureFile(featureCode);
+
+    toast.success(
+      "Code has been generated successfully! Please scroll down & look for generated code.",
+      {
+        position: TOAST_POSITION,
+        autoClose: TOAST_AUTO_CLOSE,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      }
+    );
+  }, [
+    serviceName,
+    apiEndpoint,
+    requestType,
+    isRequestBodyFormatted,
+    requestBody,
+    responseBody,
+    errorResponseBody,
+    headers,
+    generateClass,
+    capitalize,
+    filterJsonBySelection,
+    formatJsonToTable,
+    formatJsonToExample,
+    formatJsonToErrorExample,
+    generateUserInputMap,
+    selectedRequestFields,
+  ]);
+
+  const formatJsonStringToHeaderText = useCallback((jsonString) => {
+    try {
+      const jsonObj = JSON.parse(jsonString);
+      return Object.entries(jsonObj)
+        .map(([key, value]) => `${key}:${value}`)
+        .join("\n");
+    } catch (error) {
+      console.error("Invalid JSON string:", error);
+      return "";
+    }
+  }, []);
+
+  const handleData = useCallback(
+    (data) => {
+      if (!data.details.summary) {
+        data.details.summary = "untitled";
+      }
+
+      const successResponses = data.details.responseSamples.success;
+      const errorResponses = data.details.responseSamples.failure;
+
+      const request =
+        data.details.requestSample === null
+          ? "{}"
+          : JSON.stringify(data.details.requestSample);
+      const response = successResponses.length > 0 ? successResponses[0] : {};
+      const errorResponse = errorResponses.length > 0 ? errorResponses[0] : {};
+      const successResponseCode = response.statusCode;
+
+      setServiceName(camelCase(data.details.summary));
+      setApiEndpoint(data.path);
+      setRequestType(data.method.toUpperCase());
+      setHeaders([]); // Clear previous headers
+      setBulkHeaders(
+        formatJsonStringToHeaderText(JSON.stringify(data.details.headervalues))
+      );
+      setRequestBody(request);
+      setResponseBody(JSON.stringify(response));
+      setErrorResponseBody(JSON.stringify(errorResponse));
+      setResponseCode(successResponseCode);
+      setIsRequestBodyFormatted(false); // Reset formatting status for new input
+      setParsedRequestBody({}); // Clear parsed body
+      setSelectedRequestFields([]); // Clear selected fields
+
+      setAccordionState({
+        requestBody: true,
+        successResponse: true,
+        errorResponse: true,
+        bulkHeaders: true,
+      });
+      setViewMode({
+        request: "edit",
+        response: "edit",
+        error: "edit",
+      });
+    //   setCurrentStep(2); // Move to the next step after importing
+    },
+    [formatJsonStringToHeaderText]
+  );
+
+  const downloadFile = useCallback((content, filename, type) => {
+    if (!content) {
+      Swal.fire({
+        icon: "error",
+        title: NO_CODE_TITLE,
+        text: `No ${type} to download!`,
+      });
+      return;
+    }
+    const element = document.createElement("a");
+    const file = new Blob([content], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = filename;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }, []);
+
+  const downloadCode = useCallback(() => {
+    downloadFile(
+      generatedCode,
+      `${capitalize(serviceName) || "GeneratedService"}.java`,
+      "code"
+    );
+  }, [generatedCode, serviceName, capitalize, downloadFile]);
+
+  const downloadStepDefinition = useCallback(() => {
+    downloadFile(
+      stepDefinition,
+      `${capitalize(serviceName) || "Generated"}Steps.java`,
+      "step definition"
+    );
+  }, [stepDefinition, serviceName, capitalize, downloadFile]);
+
+  const downloadFeatureFile = useCallback(() => {
+    downloadFile(
+      featureFile,
+      `${capitalize(serviceName) || "Generated"}APITests.feature`,
+      "feature file"
+    );
+  }, [featureFile, serviceName, capitalize, downloadFile]);
+
+  const renderFieldCheckboxes = useCallback(
+    (obj, path = "") => {
+      return Object.entries(obj).map(([key, value]) => {
+        const fullPath = path ? `${path}.${key}` : key;
+        if (
+          value !== null &&
+          typeof value === "object" &&
+          !Array.isArray(value)
+        ) {
+          return (
+            <div key={fullPath} style={{ marginLeft: path ? 20 : 0 }}>
+              <strong>{key}</strong>
+              <div>{renderFieldCheckboxes(value, fullPath)}</div>
+            </div>
+          );
+        } else {
+          return (
+            <label key={fullPath} className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={selectedRequestFields.includes(fullPath)}
+                onChange={() => toggleField(fullPath)}
+              />{" "}
+              {fullPath}
+            </label>
+          );
+        }
+      });
+    },
+    [selectedRequestFields, toggleField]
+  );
+
+  const selectAllFields = useCallback(() => {
+    setSelectedRequestFields(getAllFieldPaths(parsedRequestBody));
+  }, [getAllFieldPaths, parsedRequestBody]);
+
+  const deselectAllFields = useCallback(() => setSelectedRequestFields([]), []);
+
+  const copyToClipboard = useCallback(
+    (text, successMessage = "Code copied to clipboard!") => {
+      if (!text) {
+        toast.error("Nothing to copy!", {
+          position: TOAST_POSITION,
+          autoClose: TOAST_AUTO_CLOSE,
+        });
+        return;
+      }
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          toast.success(successMessage, {
+            position: TOAST_POSITION,
+            autoClose: TOAST_AUTO_CLOSE,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+          toast.error("Failed to copy code!", {
+            position: TOAST_POSITION,
+            autoClose: TOAST_AUTO_CLOSE,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        });
+    },
+    []
+  );
+
+  const handleServiceCopy = useCallback(() => {
+    copyToClipboard(visibleGeneratedCode, "Service code copied!");
+  }, [copyToClipboard, visibleGeneratedCode]);
+
+  const handleStepCopy = useCallback(() => {
+    copyToClipboard(visibleStepDefinition, "Step Definition copied!");
+  }, [copyToClipboard, visibleStepDefinition]);
+
+  const handleFeatureCopy = useCallback(() => {
+    copyToClipboard(visibleFeatureFile, "Feature File copied!");
+  }, [copyToClipboard, visibleFeatureFile]);
+
+  const nextStep = useCallback(() => {
+    // Basic validation for Step 1 before moving to Step 2
+    if (currentStep === 1) {
+      if (!serviceName.trim() || !apiEndpoint.trim()) {
+        Swal.fire({
+          icon: "warning",
+          title: "Missing Information",
+          text: "Please fill in Service Name and API Endpoint URL before proceeding.",
+        });
+        return;
+      }
+    }
+    setCurrentStep((prev) => prev + 1);
+  }, [currentStep, serviceName, apiEndpoint]);
+
+  const prevStep = useCallback(() => {
+    setCurrentStep((prev) => prev - 1);
+  }, []);
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <>
+            <div className="import-section">
+              <ImportFromSwagger onReset={clearAll} onData={handleData} />
+            </div>
+            <div className="input-group">
+              <label>Service Name</label>
+              <input
+                type="text"
+                value={serviceName}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value.includes(" ")) {
+                    setServiceName(value);
+                  }
+                }}
+                placeholder="Enter service name (no spaces)"
+                className="input-field"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>API Endpoint URL</label>
+              <input
+                type="url"
+                value={apiEndpoint}
+                onChange={(e) => setApiEndpoint(e.target.value)}
+                placeholder="/objects"
+                className="input-field"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Request Type</label>
+              <select
+                value={requestType}
+                onChange={(e) => setRequestType(e.target.value)}
+                className="input-field"
+              >
+                <option>GET</option>
+                <option>POST</option>
+                <option>PUT</option>
+                <option>DELETE</option>
+                <option>PATCH</option>
+                <option>HEAD</option>
+                <option>OPTIONS</option>
+              </select>
+            </div>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <div className="input-group">
+              <label>Service Name (Read-only)</label>
+              <input
+                type="text"
+                value={serviceName}
+                className="input-field"
+                readOnly
+              />
+            </div>
+            <div className="input-group">
+              <label>API Endpoint URL (Read-only)</label>
+              <input
+                type="text"
+                value={apiEndpoint}
+                className="input-field"
+                readOnly
+              />
+            </div>
+            <div className="input-group">
+              <label>Request Type (Read-only)</label>
+              <input
+                type="text"
+                value={requestType}
+                className="input-field"
+                readOnly
+              />
+            </div>
+
+            <CollapsibleSection
+              title="Request Headers"
+              isOpen={accordionState.bulkHeaders}
+              onToggle={() => toggleAccordion("bulkHeaders")}
+            >
+              <div className="header-input-container">
+                <input
+                  type="text"
+                  placeholder="Header Key"
+                  value={headerKey}
+                  onChange={(e) => setHeaderKey(e.target.value)}
+                  className="header-input-field"
+                />
+                <input
+                  type="text"
+                  placeholder="Header Value"
+                  value={headerValue}
+                  onChange={(e) => setHeaderValue(e.target.value)}
+                  className="header-input-field"
+                />
+                <button
+                  type="button"
+                  onClick={addHeader}
+                  className="add-button"
+                >
+                  <FaPlus /> Add Header
+                </button>
+              </div>
+
+              <div className="input-group">
+                <label>Bulk Headers (Key: Value per line)</label>
+                <textarea
+                  value={bulkHeaders}
+                  onChange={(e) => setBulkHeaders(e.target.value)}
+                  placeholder="Content-Type: application/json&#10;Authorization: Bearer token123"
+                  rows="5"
+                  className="text-area-field"
+                />
+                <button
+                  type="button"
+                  onClick={bulkAddHeaders}
+                  className="primary-button"
+                >
+                  <FaPlus /> Add Bulk Headers
+                </button>
+              </div>
+
+              {headers.length > 0 && (
+                <div className="header-list">
+                  <h4>Current Headers:</h4>
+                  {headers.map((h, index) => (
+                    <div key={index} className="header-item">
+                      {h.key}: {h.value}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setHeaders(headers.filter((_, i) => i !== index))
+                        }
+                        className="delete-button"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Request Body (JSON)"
+              isOpen={accordionState.requestBody}
+              onToggle={() => toggleAccordion("requestBody")}
+            >
+              {viewMode.request === "edit" ? (
+                <div>
+                  <textarea
+                    value={requestBody}
+                    onChange={(e) => {
+                      setRequestBody(e.target.value);
+                      setIsRequestBodyFormatted(false);
+                    }}
+                    placeholder="Enter request JSON body"
+                    rows="10"
+                    className="text-area-field"
+                  />
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        formatJson(requestBody, setRequestBody, "request")
+                      }
+                      className="primary-button"
+                    >
+                      <FaCode /> Format & Populate Fields
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="code-block-container">
+                    <SyntaxHighlighter language="json" style={vscDarkPlus}>
+                      {requestBody}
+                    </SyntaxHighlighter>
+                  </div>
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() => toggleEditMode("request")}
+                      className="secondary-button"
+                    >
+                      <FaEdit /> Edit JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(requestBody, "Request Body copied!")
+                      }
+                      className="secondary-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
+
+                  {Object.keys(parsedRequestBody).length > 0 && (
+                    <div className="field-selection-container">
+                      <h4>
+                        <BiSelectMultiple /> Select Request Body Fields for
+                        Examples:
+                      </h4>
+                      <div className="button-group">
+                        <button
+                          onClick={selectAllFields}
+                          className="tertiary-button"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          onClick={deselectAllFields}
+                          className="tertiary-button"
+                        >
+                          Deselect All
+                        </button>
+                      </div>
+                      <div className="checkbox-container">
+                        {renderFieldCheckboxes(parsedRequestBody)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Success Response Body (JSON)"
+              isOpen={accordionState.successResponse}
+              onToggle={() => toggleAccordion("successResponse")}
+            >
+              {viewMode.response === "edit" ? (
+                <div>
+                  <textarea
+                    value={responseBody}
+                    onChange={(e) => setResponseBody(e.target.value)}
+                    placeholder="Enter expected success JSON response body"
+                    rows="10"
+                    className="text-area-field"
+                  />
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        formatJson(responseBody, setResponseBody, "response")
+                      }
+                      className="primary-button"
+                    >
+                      <FaCode /> Format JSON
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="code-block-container">
+                    <SyntaxHighlighter language="json" style={vscDarkPlus}>
+                      {responseBody}
+                    </SyntaxHighlighter>
+                  </div>
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() => toggleEditMode("response")}
+                      className="secondary-button"
+                    >
+                      <FaEdit /> Edit JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(responseBody, "Response Body copied!")
+                      }
+                      className="secondary-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Error Response Body (JSON)"
+              isOpen={accordionState.errorResponse}
+              onToggle={() => toggleAccordion("errorResponse")}
+            >
+              {viewMode.error === "edit" ? (
+                <div>
+                  <textarea
+                    value={errorResponseBody}
+                    onChange={(e) => setErrorResponseBody(e.target.value)}
+                    placeholder="Enter expected error JSON response body"
+                    rows="10"
+                    className="text-area-field"
+                  />
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        formatJson(
+                          errorResponseBody,
+                          setErrorResponseBody,
+                          "error"
+                        )
+                      }
+                      className="primary-button"
+                    >
+                      <FaCode /> Format JSON
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="code-block-container">
+                    <SyntaxHighlighter language="json" style={vscDarkPlus}>
+                      {errorResponseBody}
+                    </SyntaxHighlighter>
+                  </div>
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() => toggleEditMode("error")}
+                      className="secondary-button"
+                    >
+                      <FaEdit /> Edit JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(errorResponseBody, "Error Body copied!")
+                      }
+                      className="secondary-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <div className="input-group">
+              <label>Response Code</label>
+              <select
+                value={responseCode}
+                onChange={(e) => setResponseCode(e.target.value)}
+                className="input-field"
+              >
+                {[
+                  100, 101, 102, 200, 201, 202, 204, 400, 401, 403, 404, 500,
+                  502, 503,
+                ].map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        );
+      case 3:
+        return (
+          <>
+            {generatedCode && (
+              <>
+                <h3 className="section-heading">
+                  Generated Service Code (Java)
+                </h3>
+                <div className="code-output-container">
+                  <SyntaxHighlighter
+                    language="java"
+                    style={vscDarkPlus}
+                    showLineNumbers
+                  >
+                    {visibleGeneratedCode}
+                  </SyntaxHighlighter>
+                  <div className="code-actions">
+                    <button
+                      onClick={handleServiceCopy}
+                      className="action-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                    <button onClick={downloadCode} className="action-button">
+                      <FaDownload /> Download
+                    </button>
+                  </div>
+                </div>
+
+                <h3 className="section-heading">
+                  Generated Step Definition (Java)
+                </h3>
+                <div className="code-output-container">
+                  <SyntaxHighlighter
+                    language="java"
+                    style={vscDarkPlus}
+                    showLineNumbers
+                  >
+                    {visibleStepDefinition}
+                  </SyntaxHighlighter>
+                  <div className="code-actions">
+                    <button onClick={handleStepCopy} className="action-button">
+                      <FaCopy /> Copy
+                    </button>
+                    <button
+                      onClick={downloadStepDefinition}
+                      className="action-button"
+                    >
+                      <FaDownload /> Download
+                    </button>
+                  </div>
+                </div>
+
+                <h3 className="section-heading">
+                  Generated Feature File (Gherkin)
+                </h3>
+                <div className="code-output-container">
+                  <SyntaxHighlighter
+                    language="gherkin"
+                    style={vscDarkPlus}
+                    showLineNumbers
+                  >
+                    {visibleFeatureFile}
+                  </SyntaxHighlighter>
+                  <div className="code-actions">
+                    <button
+                      onClick={handleFeatureCopy}
+                      className="action-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                    <button
+                      onClick={downloadFeatureFile}
+                      className="action-button"
+                    >
+                      <FaDownload /> Download
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="app-container">
+      <ToastContainer
+        position="top-left"
+        autoClose={TOAST_AUTO_CLOSE}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
+      <h2>API Automation Code Generator</h2>
+
+      {/* Step Indicators */}
+      <div className="stepper-progress">
+        <div
+          className={`step-indicator ${currentStep === 1 ? "active" : ""} ${
+            currentStep > 1 ? "completed" : ""
+          }`}
+        >
+          1. API Details
+        </div>
+        <div
+          className={`step-indicator ${currentStep === 2 ? "active" : ""} ${
+            currentStep > 2 ? "completed" : ""
+          }`}
+        >
+          2. Request/Response
+        </div>
+        <div className={`step-indicator ${currentStep === 3 ? "active" : ""}`}>
+          3. Generated Code
+        </div>
+      </div>
+
+      <div className="step-content">{renderStep()}</div>
+
+      <div className="action-buttons">
+        {currentStep > 1 && (
+          <button type="button" onClick={prevStep} className="secondary-button">
+            Previous
+          </button>
+        )}
+        {currentStep < 2 && (
+          <button type="button" onClick={nextStep} className="primary-button">
+            Next
+          </button>
+        )}
+        {currentStep === 2 && (
+          <button
+            type="button"
+            onClick={generateCode}
+            className="generate-button"
+          >
+            <FaCode /> Generate Code
+          </button>
+        )}
+        {currentStep === 3 && (
+          <button type="button" onClick={clearAll} className="clear-button">
+            <FaTrash /> Clear All
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default App;
-	
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
