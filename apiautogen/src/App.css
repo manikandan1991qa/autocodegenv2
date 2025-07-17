@@ -391,7 +391,7 @@
 
 .action-button {
     padding: 8px 15px; /* Slightly larger action buttons */
-    background-color: #555;
+    background-color: #B3040D;
     color: white;
     border: none;
     border-radius: 5px;
@@ -404,7 +404,7 @@
 }
 
 .action-button:hover {
-    background-color: #333;
+    background-color: #e30613;
     transform: translateY(-1px);
 }
 
