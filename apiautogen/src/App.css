@@ -50,8 +50,8 @@
 }
 
 .step-indicator.active {
-    border-color: #e30613;
-    color: #e30613;
+    border-color: #B3040D;
+    color: #B3040D;
 }
 
 .step-indicator.completed {
@@ -100,7 +100,7 @@
 }
 
 
-.import-swagger-info {
+.import-swagger-info{
     font-size: 1em;
     color: #666;
     text-align: center;
@@ -111,6 +111,7 @@
     align-items: center; /* Vertical alignment */
     justify-content: center; /* Horizontal alignment */
 }
+
 
 
 /* Input Groups */
@@ -217,7 +218,7 @@
 
 .primary-button {
     padding: 12px 25px; /* Larger buttons */
-    background-color: #007bff;
+    background-color: #B3040D;
     color: white;
     border: none;
     border-radius: 6px; /* Slightly more rounded */
@@ -225,13 +226,13 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.1em;
-    font-weight: 500;
+    font-size: 1.3em;
+    font-weight: bold;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .primary-button:hover {
-    background-color: #0056b3;
+    background-color: #e30613;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
@@ -245,8 +246,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.1em;
-    font-weight: 500;
+    font-size: 1.3em;
+    font-weight: bold;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -286,7 +287,7 @@
 
 .generate-button {
     padding: 16px 35px; /* Larger, more prominent generate button */
-    background-color: #28a745; /* Success green */
+    background-color: #B3040D; /* Success green */
     color: white;
     border: none;
     border-radius: 8px;
@@ -301,7 +302,7 @@
 }
 
 .generate-button:hover {
-    background-color: #218838;
+    background-color: #e30613;
     box-shadow: 0 8px 20px rgba(40,167,69,0.4);
     transform: translateY(-2px);
 }

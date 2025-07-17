@@ -46,11 +46,11 @@ textarea:focus {
 }
 
 button {
-    background-color: #e30613;
+    background-color: #B3040D;
     color: white;
     border: none;
     padding: 9px 18px;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 400;
     border-radius: 5px;
     cursor: pointer;

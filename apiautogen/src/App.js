@@ -8,6 +8,8 @@ import {
   FaTrash,
   FaDownload,
   FaCopy,
+  FaArrowRight,
+  FaArrowLeft
 } from "react-icons/fa";
 import { BiSelectMultiple } from "react-icons/bi";
 import { ToastContainer, toast } from "react-toastify";
@@ -1452,7 +1454,7 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
         pauseOnHover
       />
 
-      <TitleBar title="API Automation Code Generator" />
+      <TitleBar title="API Auto Code Gen" />
 
       {/* Step Indicators */}
       <div className="stepper-progress">
@@ -1478,18 +1480,20 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
       <div className="step-content">{renderStep()}</div>
 
       <div className="action-buttons">
-        <button type="button" onClick={clearAll} className="clear-button">
-          Clear
-        </button>
+       
 
-        {currentStep > 1 && currentStep < 3 && (
+        {currentStep > 1 && currentStep <= 3 && (
           <button type="button" onClick={prevStep} className="secondary-button">
-            Previous
+           <FaArrowLeft /> Previous
           </button>
         )}
+        {currentStep !== 3 && (
+         <button type="button" onClick={clearAll} className="clear-button">
+          Clear
+        </button>)}
         {currentStep < 3 && currentStep !== 2 && (
           <button type="button" onClick={nextStep} className="primary-button">
-            Next
+            Next <FaArrowRight />
           </button>
         )}
         {currentStep === 2 && (
@@ -1501,6 +1505,10 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
             <FaCode /> Generate Code
           </button>
         )}
+         {currentStep == 3 && (
+         <button type="button" onClick={clearAll} className="clear-button">
+          Reset All 
+            </button>)}
       </div>
     </div>
   );
