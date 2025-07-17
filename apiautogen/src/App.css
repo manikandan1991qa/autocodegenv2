@@ -1,38 +1,57 @@
 /* App.css */
 
-/* General Container */
+
 .app-container {
-    max-width: 1200px;
-    margin: 30px auto;
-    padding: 20px;
+    max-width: 98%; /* Use a high percentage for near full-screen */
+    margin: auto; /* Centers the container */
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+/* Title Bar Styling */
+.title-bar {
+    /* background-color: #0056b3;  */
+    color: black;
+    border-radius: 8px 8px 0 0;
+    /* Adjust margin to extend full width within the app-container's padding */
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.title-bar h1 {
+    margin: 0;
+    font-size: 1.8em; /* Larger, more prominent title */
+    font-weight: 600; /* Bolder font weight */
+    letter-spacing: 0.8px; /* Slightly increased letter spacing */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Subtle text shadow */
 }
 
 /* Stepper Progress Indicators */
 .stepper-progress {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 30px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 5px; /* More space below stepper */
+    padding-bottom: 5px; /* More padding below for the border */
+    border-bottom: 2px solid #eee; /* Thicker border */
 }
 
 .step-indicator {
     flex: 1;
     text-align: center;
-    padding: 10px;
-    border-bottom: 3px solid #ccc;
+    padding: 12px; /* Increased padding */
+    border-bottom: 4px solid #ccc; /* Thicker border */
     color: #888;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-size: 1.1em; /* Slightly larger text */
 }
 
 .step-indicator.active {
-    border-color: #007bff;
-    color: #007bff;
+    border-color: #e30613;
+    color: #e30613;
 }
 
 .step-indicator.completed {
@@ -40,82 +59,146 @@
     color: #28a745;
 }
 
+/* Two-Column Layout for Step Content */
 .step-content {
     margin-top: 20px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #fcfcfc;
 }
 
-/* Import Section */
-.import-section {
-    text-align: right;
-    margin-bottom: 20px;
+.step-content-columns {
+    display: flex; /* Enables flexbox for two columns */
+    gap: 40px; /* Increased space between columns */
+    padding: 30px; /* More padding for the entire content area of the step */
+    border: 1px solid #ddd;
+    border-radius: 10px; /* More rounded corners */
+    background-color: #fcfcfc;
+    min-height: 600px; /* Ensure a generous minimum height for consistent layout */
+    align-items: stretch; /* Make columns stretch to equal height */
 }
+
+.left-column,
+.middle-column,
+.right-column {
+    flex: 1; /* Each column takes equal width */
+    padding: 25px; /* More internal padding */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06); /* Enhanced shadow for depth */
+    display: flex; /* Use flexbox for internal content layout */
+    flex-direction: column; /* Stack children vertically */
+}
+
+.left-column h3,
+.middle-column h3,
+.right-column h3 {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 25px; /* More space below headings */
+    border-bottom: 2px solid #eee; /* Thicker heading underline */
+    padding-bottom: 12px;
+    font-size: 1em; /* Larger heading font */
+    font-weight: 600;
+}
+
+
+.import-swagger-info {
+    font-size: 1em;
+    color: #666;
+    text-align: center;
+    line-height: 1.6;
+    padding: 0 10px;
+    flex-grow: 1; /* Allows this paragraph to take up available vertical space */
+    display: flex; /* For vertical centering of text if needed */
+    align-items: center; /* Vertical alignment */
+    justify-content: center; /* Horizontal alignment */
+}
+
 
 /* Input Groups */
 .input-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px; /* More space between input groups */
 }
 
-.input-field {
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 1.05em;
+}
+
+.input-field,
+.text-area-field {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 14px; /* Increased padding for better touch targets */
+    border: 1px solid #ccc; /* Slightly darker border */
+    border-radius: 6px;
     box-sizing: border-box;
-    margin-top: 5px;
+    font-size: 1.05em;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus,
+.text-area-field:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
 }
 
 .text-area-field {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-    margin-top: 5px;
-    font-family: monospace;
+    min-height: 150px; /* More generous minimum height for text areas */
+    resize: vertical;
 }
 
 /* Header Specific Styles */
 .header-input-container {
-    margin-bottom: 8px;
+    margin-bottom: 20px;
     display: flex;
-    gap: 8px;
+    gap: 15px; /* More space between header key/value inputs */
+    align-items: flex-end;
 }
 
 .header-input-field {
     flex: 1;
-    padding: 8px;
-    border: 1px solid #ddd;
+    padding: 12px;
+    border: 1px solid #ccc;
     border-radius: 4px;
+    font-size: 1em;
 }
 
 .header-list {
-    margin-top: 15px;
+    margin-top: 25px;
     border-top: 1px solid #eee;
-    padding-top: 10px;
+    padding-top: 20px;
+    max-height: 200px; /* Limit height for scroll */
+    overflow-y: auto;
+    border-bottom: 1px solid #eee; /* Add bottom border for list */
+    padding-bottom: 10px;
 }
 
 .header-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px dotted #eee;
+    padding: 10px 0;
+    border-bottom: 1px dotted #e0e0e0; /* Lighter dotted border */
+    font-size: 0.95em;
 }
+
+.header-item:last-child {
+    border-bottom: none; /* No border for the last item */
+}
+
 
 /* Button Styles */
 .button-group {
-    margin-top: 10px;
+    margin-top: 15px;
     display: flex;
-    gap: 10px;
+    gap: 12px; /* More space between buttons in a group */
     flex-wrap: wrap;
 }
 
 .add-button {
-    padding: 8px 12px;
+    padding: 10px 15px;
     background-color: #28a745;
     color: white;
     border: none;
@@ -123,40 +206,68 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.add-button:hover {
+    background-color: #218838;
 }
 
 .primary-button {
-    padding: 10px 15px;
+    padding: 12px 25px; /* Larger buttons */
     background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px; /* Slightly more rounded */
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
+    font-size: 1.1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primary-button:hover {
+    background-color: #0056b3;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .secondary-button {
-    padding: 10px 15px;
+    padding: 12px 25px;
     background-color: #6c757d;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
+    font-size: 1.1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .tertiary-button {
-    padding: 8px 12px;
+    padding: 10px 18px;
     background-color: #17a2b8;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.tertiary-button:hover {
+    background-color: #138496;
 }
 
 .delete-button {
@@ -164,120 +275,203 @@
     border: none;
     color: #dc3545;
     cursor: pointer;
-    font-size: 1em;
+    font-size: 1.2em; /* Slightly larger delete icon */
+    padding: 8px; /* Add more padding for easier clicking */
+    transition: color 0.2s ease;
+}
+
+.delete-button:hover {
+    color: #a71d2a;
 }
 
 .generate-button {
-    padding: 12px 25px;
-    background-color: #007bff;
+    padding: 16px 35px; /* Larger, more prominent generate button */
+    background-color: #28a745; /* Success green */
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1.1em;
+    font-size: 1.3em;
     font-weight: bold;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.generate-button:hover {
+    background-color: #218838;
+    box-shadow: 0 8px 20px rgba(40,167,69,0.4);
+    transform: translateY(-2px);
 }
 
 .clear-button {
-    padding: 12px 25px;
-    background-color: #dc3545;
+    padding: 16px 35px;
+    background-color: #495a63;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1.1em;
+    font-size: 1.3em;
     font-weight: bold;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    /* box-shadow: 0 5px 15px rgba(220,53,69,0.3); */
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.clear-button:hover {
+    background-color: #7c909b;
+    /* box-shadow: 0 8px 20px rgba(220,53,69,0.4); */
+    transform: translateY(-2px);
 }
 
 .action-buttons {
     display: flex;
     justify-content: center;
-    gap: 20px;
-    margin-top: 30px;
-    margin-bottom: 30px;
+    gap: 30px; 
+    padding: 20px;
 }
 
 /* Code Output Sections */
 .section-heading {
-    margin-top: 30px;
-    margin-bottom: 15px;
+    margin-top: 35px;
+    margin-bottom: 20px;
     border-bottom: 2px solid #eee;
-    padding-bottom: 5px;
+    padding-bottom: 10px;
     color: #333;
+    font-size: 1.4em;
+}
+
+.code-input-container {
+    position: relative;
+    margin-bottom: 25px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: auto; /* Changed to auto to ensure scrollbars only when needed */
+    max-height: 480px; /* Max height for code viewer */
+    background-color: #f5f5f5; /* Light background for code area */
+    padding: 45px 20px 20px 20px; /* Add padding for content, more at top for buttons */
+    font-family: 'Source Code Pro', 'Fira Code', 'Consolas', monospace; /* Preferred coding font stack */
+    font-size: 0.9em;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Wrap long lines */
+    word-break: break-all; /* Break words for long lines without spaces */
+    box-shadow: inset 0 1px 5px rgba(0,0,0,0.05); /* Subtle inner shadow */
 }
 
 .code-output-container {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     border: 1px solid #ccc;
-    border-radius: 5px;
-    overflow: hidden;
+    border-radius: 8px;
+    overflow: auto; /* Changed to auto to ensure scrollbars only when needed */
+    max-height: 480px; /* Max height for code viewer */
+    max-width: 520px; /* Max width for code viewer */
+    background-color: #f5f5f5; /* Light background for code area */
+    padding: 45px 20px 20px 20px; /* Add padding for content, more at top for buttons */
+    font-family: 'Source Code Pro', 'Fira Code', 'Consolas', monospace; /* Preferred coding font stack */
+    font-size: 0.9em;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Wrap long lines */
+    word-break: break-all; /* Break words for long lines without spaces */
+    box-shadow: inset 0 1px 5px rgba(0,0,0,0.05); /* Subtle inner shadow */
 }
 
 .code-actions {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 15px;
+    right: 15px;
     display: flex;
-    gap: 5px;
+    gap: 10px; /* More space between code action buttons */
 }
 
 .action-button {
-    padding: 5px 10px;
+    padding: 8px 15px; /* Slightly larger action buttons */
     background-color: #555;
     color: white;
     border: none;
-    border-radius: 3px;
+    border-radius: 5px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.action-button:hover {
+    background-color: #333;
+    transform: translateY(-1px);
 }
 
 /* Request Body Field Selection */
 .field-selection-container {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px dashed #ccc;
-    border-radius: 5px;
+    margin-top: 25px;
+    padding: 20px;
+    border: 1px dashed #b0b0b0; /* More visible dashed border */
+    border-radius: 8px;
     background-color: #f9f9f9;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.field-selection-container h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #444;
+    font-size: 1.15em;
 }
 
 .checkbox-container {
-    margin-top: 10px;
-    max-height: 200px;
+    margin-top: 15px;
+    max-height: 250px; /* Increased max-height for checkboxes */
     overflow-y: auto;
-    border: 1px solid #eee;
-    padding: 10px;
-    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 6px;
+    background-color: #fff;
 }
 
 .checkbox-container label {
-    display: block; /* Make each label take its own line */
+    display: flex; /* Use flex to align checkbox and text */
+    align-items: center;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    color: #333;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin-right: 10px; /* Space between checkbox and text */
+    transform: scale(1.1); /* Slightly larger checkboxes */
 }
 
 /* Collapsible Section Styles */
 .collapsible-section-container {
-    margin-bottom: 15px;
+    margin-bottom: 20px; /* More space between collapsible sections */
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .collapsible-section-header {
-    background: #f5f5f5;
-    padding: 10px 15px;
+    background: #e9ecef; /* Lighter background for headers */
+    padding: 15px 20px; /* More padding */
     cursor: pointer;
     font-weight: bold;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 1.15em; /* Larger font */
+    color: #343a40; /* Darker text */
+    transition: background-color 0.2s ease;
+}
+
+.collapsible-section-header:hover {
+    background-color: #dee2e6;
 }
 
 .collapsible-section-header.open {
@@ -285,10 +479,25 @@
 }
 
 .collapsible-section-icon {
-    font-size: 1.2em;
+    font-size: 1.5em; /* Larger icon */
+    font-weight: normal;
+    transition: transform 0.2s ease;
+}
+
+.collapsible-section-header.open .collapsible-section-icon {
+    transform: rotate(180deg); /* Rotate icon when open */
 }
 
 .collapsible-section-content {
-    padding: 15px;
+    padding: 20px;
     background-color: #fff;
+}
+
+.final-step-info {
+    float: clear;
+    font-size: 1.1em;
+    color: #4CAF50; /* Green for success message */
+    text-align: center;
+    margin-top: 30px;
+    font-weight: 500;
 }

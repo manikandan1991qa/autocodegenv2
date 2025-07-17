@@ -77,16 +77,9 @@ const useLineByLineCode = (fullCode, delay = 120) => {
   return visibleCode;
 };
 
-// --- New TitleBar Component ---
-const TitleBar = ({ title }) => (
-  <div className="title-bar">
-    <h1>{title}</h1>
-  </div>
-);
-
 // --- Main App Component ---
 function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1); // New state for current step
   const [serviceName, setServiceName] = useState("");
   const [apiEndpoint, setApiEndpoint] = useState("");
   const [requestType, setRequestType] = useState("GET");
@@ -466,15 +459,6 @@ public static class ${name} {\n`;
       });
       return;
     }
-    if (!requestBody.trim()) {
-      // Only require formatting if a body exists
-      Swal.fire({
-        icon: "error",
-        title: FORMATTING_ERROR_TITLE,
-        text: "Please Enter the Request Body.",
-      });
-      return;
-    }
     if (!isRequestBodyFormatted && requestBody.trim()) {
       // Only require formatting if a body exists
       Swal.fire({
@@ -494,8 +478,9 @@ public static class ${name} {\n`;
     let userInputMap = "";
     let selectedDefaults = undefined;
 
+    
     try {
-      setCurrentStep(3); // Move to the Final Step
+    setCurrentStep(3); // Move to the Final Step
 
       if (requestBody.trim()) {
         const rawRequestObj = JSON.parse(requestBody);
@@ -869,8 +854,7 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
         response: "edit",
         error: "edit",
       });
-
-      //   setCurrentStep(2); // Move to the next step after importing
+    //   setCurrentStep(2); // Move to the next step after importing
     },
     [formatJsonStringToHeaderText]
   );
@@ -1015,13 +999,6 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
           text: "Please fill in Service Name and API Endpoint URL before proceeding.",
         });
         return;
-      } else {
-        // Format JSON
-        if (requestBody && responseBody && errorResponseBody) {
-          formatJson(requestBody, setRequestBody, "request");
-          formatJson(responseBody, setResponseBody, "response");
-          formatJson(errorResponseBody, setErrorResponseBody, "error");
-        }
       }
     }
     setCurrentStep((prev) => prev + 1);
@@ -1035,105 +1012,143 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
     switch (currentStep) {
       case 1:
         return (
-          <div className="step-content-columns">
-            <div className="left-column">
-              <h3>Import API Details</h3>
+          <>
+            <div className="import-section">
               <ImportFromSwagger onReset={clearAll} onData={handleData} />
-              <p className="import-swagger-info">
-                Use the button above to import API definitions directly from a
-                Swagger OpenAPI JSON file. This will automatically populate the
-                API details on the right.
-              </p>
             </div>
-            <div className="right-column">
-              <h3>Manual API Details Entry</h3>
-              <div className="input-group">
-                <label htmlFor="serviceName">Service Name</label>
-                <input
-                  type="text"
-                  id="serviceName"
-                  className="input-field"
-                  value={serviceName}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (!value.includes(" ")) {
-                      setServiceName(value);
-                    }
-                  }}
-                  placeholder="Enter service name (no spaces)"
-                />
-              </div>
-              <div className="input-group">
-                <label htmlFor="apiEndpoint">API Endpoint URL</label>
-                <input
-                  type="url"
-                  id="apiEndpoint"
-                  className="input-field"
-                  value={apiEndpoint}
-                  onChange={(e) => setApiEndpoint(e.target.value)}
-                  placeholder="/objects"
-                />
-              </div>
-              <div className="input-group">
-                <label htmlFor="requestType">Request Type:</label>
-                <select
-                  id="requestType"
-                  className="input-field"
-                  value={requestType}
-                  onChange={(e) => setRequestType(e.target.value)}
-                >
-                  <option value="GET">GET</option>
-                  <option value="POST">POST</option>
-                  <option value="PUT">PUT</option>
-                  <option value="DELETE">DELETE</option>
-                  <option value="PATCH">PATCH</option>
-                  <option>HEAD</option>
-                  <option>OPTIONS</option>
-                </select>
-              </div>
+            <div className="input-group">
+              <label>Service Name</label>
+              <input
+                type="text"
+                value={serviceName}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value.includes(" ")) {
+                    setServiceName(value);
+                  }
+                }}
+                placeholder="Enter service name (no spaces)"
+                className="input-field"
+              />
             </div>
-          </div>
+
+            <div className="input-group">
+              <label>API Endpoint URL</label>
+              <input
+                type="url"
+                value={apiEndpoint}
+                onChange={(e) => setApiEndpoint(e.target.value)}
+                placeholder="/objects"
+                className="input-field"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Request Type</label>
+              <select
+                value={requestType}
+                onChange={(e) => setRequestType(e.target.value)}
+                className="input-field"
+              >
+                <option>GET</option>
+                <option>POST</option>
+                <option>PUT</option>
+                <option>DELETE</option>
+                <option>PATCH</option>
+                <option>HEAD</option>
+                <option>OPTIONS</option>
+              </select>
+            </div>
+          </>
         );
       case 2:
         return (
-          <div className="step-content-columns">
-            <div className="left-column">
-              <h3>Request Configuration</h3>
-              <CollapsibleSection
-                title="Headers"
-                isOpen={accordionState.bulkHeaders}
-                onToggle={() => toggleAccordion("bulkHeaders")}
-              >
-                <div className="header-input-container">
-                  <input
-                    type="text"
-                    className="header-input-field"
-                    placeholder="Key"
-                    value={headerKey}
-                    onChange={(e) => setHeaderKey(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="header-input-field"
-                    placeholder="Value"
-                    value={headerValue}
-                    onChange={(e) => setHeaderValue(e.target.value)}
-                  />
-                  <button onClick={addHeader} className="add-button">
-                    <FaPlus /> Add
-                  </button>
-                </div>
+          <>
+            <div className="input-group">
+              <label>Service Name (Read-only)</label>
+              <input
+                type="text"
+                value={serviceName}
+                className="input-field"
+                readOnly
+              />
+            </div>
+            <div className="input-group">
+              <label>API Endpoint URL (Read-only)</label>
+              <input
+                type="text"
+                value={apiEndpoint}
+                className="input-field"
+                readOnly
+              />
+            </div>
+            <div className="input-group">
+              <label>Request Type (Read-only)</label>
+              <input
+                type="text"
+                value={requestType}
+                className="input-field"
+                readOnly
+              />
+            </div>
+
+            <CollapsibleSection
+              title="Request Headers"
+              isOpen={accordionState.bulkHeaders}
+              onToggle={() => toggleAccordion("bulkHeaders")}
+            >
+              <div className="header-input-container">
+                <input
+                  type="text"
+                  placeholder="Header Key"
+                  value={headerKey}
+                  onChange={(e) => setHeaderKey(e.target.value)}
+                  className="header-input-field"
+                />
+                <input
+                  type="text"
+                  placeholder="Header Value"
+                  value={headerValue}
+                  onChange={(e) => setHeaderValue(e.target.value)}
+                  className="header-input-field"
+                />
+                <button
+                  type="button"
+                  onClick={addHeader}
+                  className="add-button"
+                >
+                  <FaPlus /> Add Header
+                </button>
+              </div>
+
+              <div className="input-group">
+                <label>Bulk Headers (Key: Value per line)</label>
+                <textarea
+                  value={bulkHeaders}
+                  onChange={(e) => setBulkHeaders(e.target.value)}
+                  placeholder="Content-Type: application/json&#10;Authorization: Bearer token123"
+                  rows="5"
+                  className="text-area-field"
+                />
+                <button
+                  type="button"
+                  onClick={bulkAddHeaders}
+                  className="primary-button"
+                >
+                  <FaPlus /> Add Bulk Headers
+                </button>
+              </div>
+
+              {headers.length > 0 && (
                 <div className="header-list">
-                  {headers.map((header, index) => (
+                  <h4>Current Headers:</h4>
+                  {headers.map((h, index) => (
                     <div key={index} className="header-item">
-                      <span>
-                        {header.key}: {header.value}
-                      </span>
+                      {h.key}: {h.value}
                       <button
+                        type="button"
                         onClick={() =>
-                          setHeaders((prev) =>
-                            prev.filter((_, i) => i !== index)
-                          )
+                          setHeaders(headers.filter((_, i) => i !== index))
                         }
                         className="delete-button"
                       >
@@ -1142,221 +1157,234 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
                     </div>
                   ))}
                 </div>
-                <h4 style={{ marginTop: "20px" }}>
-                  Bulk Headers (Key:Value per line)
-                </h4>
-                <textarea
-                  className="text-area-field"
-                  rows="5"
-                  value={bulkHeaders}
-                  onChange={(e) => setBulkHeaders(e.target.value)}
-                  placeholder="Content-Type: application/json&#10;Authorization: Bearer xyz"
-                ></textarea>
-                <div
-                  className="button-group"
-                  style={{ justifyContent: "flex-end" }}
-                >
-                  <button onClick={bulkAddHeaders} className="tertiary-button">
-                    Bulk Add
-                  </button>
-                </div>
-              </CollapsibleSection>
-              <CollapsibleSection
-                title="Request Body"
-                isOpen={accordionState.requestBody}
-                onToggle={() => toggleAccordion("requestBody")}
-              >
-                {viewMode.request === "edit" ? (
-                  <div className="input-group">
-                    <textarea
-                      className="text-area-field"
-                      rows="10"
-                      value={requestBody}
-                      onChange={(e) => {
-                        setRequestBody(e.target.value);
-                        setIsRequestBodyFormatted(false);
-                      }}
-                      placeholder="Enter JSON request body"
-                    ></textarea>
-                    <div className="button-group">
-                      <button
-                        onClick={() =>
-                          formatJson(requestBody, setRequestBody, "request")
-                        }
-                        className="primary-button"
-                      >
-                        <FaCode /> Format JSON
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="code-input-container">
-                    <SyntaxHighlighter
-                      language="json"
-                      style={vscDarkPlus}
-                      showLineNumbers
+              )}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Request Body (JSON)"
+              isOpen={accordionState.requestBody}
+              onToggle={() => toggleAccordion("requestBody")}
+            >
+              {viewMode.request === "edit" ? (
+                <div>
+                  <textarea
+                    value={requestBody}
+                    onChange={(e) => {
+                      setRequestBody(e.target.value);
+                      setIsRequestBodyFormatted(false);
+                    }}
+                    placeholder="Enter request JSON body"
+                    rows="10"
+                    className="text-area-field"
+                  />
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        formatJson(requestBody, setRequestBody, "request")
+                      }
+                      className="primary-button"
                     >
+                      <FaCode /> Format & Populate Fields
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="code-block-container">
+                    <SyntaxHighlighter language="json" style={vscDarkPlus}>
                       {requestBody}
                     </SyntaxHighlighter>
-                    <div className="code-actions">
-                      <button
-                        onClick={() => toggleEditMode("request")}
-                        className="action-button"
-                      >
-                        <FaEdit /> Edit
-                      </button>
-                    </div>
                   </div>
-                )}
-                {isRequestBodyFormatted && (
-                  <div className="field-selection-container">
-                    <h4>Select Fields for PayLoad/Examples:</h4>
-                    <div
-                      className="button-group"
-                      style={{ marginBottom: "10px" }}
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() => toggleEditMode("request")}
+                      className="secondary-button"
                     >
-                      <button
-                        onClick={selectAllFields}
-                        className="secondary-button"
-                      >
-                        <BiSelectMultiple /> Select All
-                      </button>
-                      <button
-                        onClick={deselectAllFields}
-                        className="secondary-button"
-                      >
-                        <FaTrash /> Deselect All
-                      </button>
-                    </div>
-                    <div className="checkbox-container">
-                      {renderFieldCheckboxes(parsedRequestBody)}
-                    </div>
-                  </div>
-                )}
-              </CollapsibleSection>
-            </div>
-            <div className="right-column">
-              <h3>Response Configuration</h3>
-              <CollapsibleSection
-                title={`Success Response Body (Status: ${responseCode})`}
-                isOpen={accordionState.successResponse}
-                onToggle={() => toggleAccordion("successResponse")}
-              >
-                {viewMode.response === "edit" ? (
-                  <div className="input-group">
-                    <textarea
-                      className="text-area-field"
-                      rows="10"
-                      value={responseBody}
-                      onChange={(e) => setResponseBody(e.target.value)}
-                      placeholder="Enter JSON success response body"
-                    ></textarea>
-                    <div className="button-group">
-                      <button
-                        onClick={() =>
-                          formatJson(responseBody, setResponseBody, "response")
-                        }
-                        className="primary-button"
-                      >
-                        <FaCode /> Format JSON
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="code-input-container">
-                    <SyntaxHighlighter
-                      language="json"
-                      style={vscDarkPlus}
-                      showLineNumbers
+                      <FaEdit /> Edit JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(requestBody, "Request Body copied!")
+                      }
+                      className="secondary-button"
                     >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
+
+                  {Object.keys(parsedRequestBody).length > 0 && (
+                    <div className="field-selection-container">
+                      <h4>
+                        <BiSelectMultiple /> Select Request Body Fields for
+                        Examples:
+                      </h4>
+                      <div className="button-group">
+                        <button
+                          onClick={selectAllFields}
+                          className="tertiary-button"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          onClick={deselectAllFields}
+                          className="tertiary-button"
+                        >
+                          Deselect All
+                        </button>
+                      </div>
+                      <div className="checkbox-container">
+                        {renderFieldCheckboxes(parsedRequestBody)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Success Response Body (JSON)"
+              isOpen={accordionState.successResponse}
+              onToggle={() => toggleAccordion("successResponse")}
+            >
+              {viewMode.response === "edit" ? (
+                <div>
+                  <textarea
+                    value={responseBody}
+                    onChange={(e) => setResponseBody(e.target.value)}
+                    placeholder="Enter expected success JSON response body"
+                    rows="10"
+                    className="text-area-field"
+                  />
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        formatJson(responseBody, setResponseBody, "response")
+                      }
+                      className="primary-button"
+                    >
+                      <FaCode /> Format JSON
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="code-block-container">
+                    <SyntaxHighlighter language="json" style={vscDarkPlus}>
                       {responseBody}
                     </SyntaxHighlighter>
-                    <div className="code-actions">
-                      <button
-                        onClick={() => toggleEditMode("response")}
-                        className="action-button"
-                      >
-                        <FaEdit /> Edit
-                      </button>
-                    </div>
                   </div>
-                )}
-              </CollapsibleSection>
-              <CollapsibleSection
-                title="Error Response Body (e.g., Status: 400, 500)"
-                isOpen={accordionState.errorResponse}
-                onToggle={() => toggleAccordion("errorResponse")}
-              >
-                {viewMode.error === "edit" ? (
-                  <div className="input-group">
-                    <textarea
-                      className="text-area-field"
-                      rows="10"
-                      value={errorResponseBody}
-                      onChange={(e) => setErrorResponseBody(e.target.value)}
-                      placeholder="Enter JSON error response body"
-                    ></textarea>
-                    <div className="button-group">
-                      <button
-                        onClick={() =>
-                          formatJson(
-                            errorResponseBody,
-                            setErrorResponseBody,
-                            "error"
-                          )
-                        }
-                        className="primary-button"
-                      >
-                        <FaCode /> Format JSON
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="code-input-container">
-                    <SyntaxHighlighter
-                      language="json"
-                      style={vscDarkPlus}
-                      showLineNumbers
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() => toggleEditMode("response")}
+                      className="secondary-button"
                     >
+                      <FaEdit /> Edit JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(responseBody, "Response Body copied!")
+                      }
+                      className="secondary-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Error Response Body (JSON)"
+              isOpen={accordionState.errorResponse}
+              onToggle={() => toggleAccordion("errorResponse")}
+            >
+              {viewMode.error === "edit" ? (
+                <div>
+                  <textarea
+                    value={errorResponseBody}
+                    onChange={(e) => setErrorResponseBody(e.target.value)}
+                    placeholder="Enter expected error JSON response body"
+                    rows="10"
+                    className="text-area-field"
+                  />
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        formatJson(
+                          errorResponseBody,
+                          setErrorResponseBody,
+                          "error"
+                        )
+                      }
+                      className="primary-button"
+                    >
+                      <FaCode /> Format JSON
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="code-block-container">
+                    <SyntaxHighlighter language="json" style={vscDarkPlus}>
                       {errorResponseBody}
                     </SyntaxHighlighter>
-                    <div className="code-actions">
-                      <button
-                        onClick={() => toggleEditMode("error")}
-                        className="action-button"
-                      >
-                        <FaEdit /> Edit
-                      </button>
-                    </div>
                   </div>
-                )}
-              </CollapsibleSection>
-              <div className="input-group">
-                <label>Response Code</label>
-                <select
-                  value={responseCode}
-                  onChange={(e) => setResponseCode(e.target.value)}
-                  className="input-field"
-                >
-                  {[
-                    100, 101, 102, 200, 201, 202, 204, 400, 401, 403, 404, 500,
-                    502, 503,
-                  ].map((code) => (
-                    <option key={code} value={code}>
-                      {code}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div className="button-group">
+                    <button
+                      type="button"
+                      onClick={() => toggleEditMode("error")}
+                      className="secondary-button"
+                    >
+                      <FaEdit /> Edit JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(errorResponseBody, "Error Body copied!")
+                      }
+                      className="secondary-button"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+
+            <div className="input-group">
+              <label>Response Code</label>
+              <select
+                value={responseCode}
+                onChange={(e) => setResponseCode(e.target.value)}
+                className="input-field"
+              >
+                {[
+                  100, 101, 102, 200, 201, 202, 204, 400, 401, 403, 404, 500,
+                  502, 503,
+                ].map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
+          </>
         );
       case 3:
         return (
           <>
-            <div className="step-content-columns">
-              <div className="left-column">
-                <h3>Generated Service Code (`.java`)</h3>
+            {generatedCode && (
+              <>
+                <h3 className="section-heading">
+                  Generated Service Code (Java)
+                </h3>
                 <div className="code-output-container">
                   <SyntaxHighlighter
                     language="java"
@@ -1377,9 +1405,10 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
                     </button>
                   </div>
                 </div>
-              </div>
-              <div className="middle-column">
-                <h3>Generated Step Definition (`.java`)</h3>
+
+                <h3 className="section-heading">
+                  Generated Step Definition (Java)
+                </h3>
                 <div className="code-output-container">
                   <SyntaxHighlighter
                     language="java"
@@ -1400,9 +1429,10 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
                     </button>
                   </div>
                 </div>
-              </div>
-              <div className="right-column">
-                <h3>Generated Feature File (`.feature`)</h3>
+
+                <h3 className="section-heading">
+                  Generated Feature File (Gherkin)
+                </h3>
                 <div className="code-output-container">
                   <SyntaxHighlighter
                     language="gherkin"
@@ -1426,12 +1456,8 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-            <p className="final-step-info">
-              Your automation code, step definition, and feature file are ready.
-              You can copy or download them.
-            </p>
+              </>
+            )}
           </>
         );
       default:
@@ -1442,7 +1468,7 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
   return (
     <div className="app-container">
       <ToastContainer
-        position={TOAST_POSITION}
+        position="top-left"
         autoClose={TOAST_AUTO_CLOSE}
         newestOnTop
         closeOnClick
@@ -1452,7 +1478,24 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
         pauseOnHover
       />
 
-      <TitleBar title="API Automation Code Generator" />
+      {/* <h2>API Automation Code Generator</h2> */}
+
+            <h2
+  style={{
+    backgroundImage: 'url("/assets/tit2.png")',
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    color: 'black',
+   // padding: '20px',
+    paddingLeft: '200px'
+     // position: 'absolute',
+  //  top: '50%',
+    //  left: '2%',
+  }}
+>
+        API Automation Code Generator
+</h2>
 
       {/* Step Indicators */}
       <div className="stepper-progress">
@@ -1478,16 +1521,12 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
       <div className="step-content">{renderStep()}</div>
 
       <div className="action-buttons">
-        <button type="button" onClick={clearAll} className="clear-button">
-          Clear
-        </button>
-
-        {currentStep > 1 && currentStep < 3 && (
+        {currentStep > 1 && (
           <button type="button" onClick={prevStep} className="secondary-button">
             Previous
           </button>
         )}
-        {currentStep < 3 && currentStep !== 2 && (
+        {currentStep < 2 && (
           <button type="button" onClick={nextStep} className="primary-button">
             Next
           </button>
@@ -1499,6 +1538,11 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
             className="generate-button"
           >
             <FaCode /> Generate Code
+          </button>
+        )}
+        {currentStep === 3 && (
+          <button type="button" onClick={clearAll} className="clear-button">
+            <FaTrash /> Clear All
           </button>
         )}
       </div>

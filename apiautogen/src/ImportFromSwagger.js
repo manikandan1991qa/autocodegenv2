@@ -35,7 +35,7 @@ const ImportFromSwagger = ({onReset,onData}) => {
 
   
   return (
-    <div>
+    <div style={styles.swaggerbutton}>
       <button onClick={handleOpenPopup}>Import from Swagger</button>
 
       {showPopup && (
@@ -70,6 +70,10 @@ const ImportFromSwagger = ({onReset,onData}) => {
 
 // Simple styling
 const styles = {
+    swaggerbutton: {
+    paddingTop:100,
+    textAlign: 'center',
+  },
   overlay: {
     position: 'fixed',
     textAlign: 'left',

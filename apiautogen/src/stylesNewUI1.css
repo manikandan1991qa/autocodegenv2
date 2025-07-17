@@ -46,13 +46,13 @@ textarea:focus {
 }
 
 button {
-    background-color: #e30613;
+    background-color: #007bff;
     color: white;
     border: none;
     padding: 9px 18px;
-    font-size: 20px;
-    font-weight: 400;
-    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
@@ -68,7 +68,9 @@ button:disabled {
 
 /* Layout container */
 #root > div {
-    width: 100%;
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px 30px;
     background-color: white;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
