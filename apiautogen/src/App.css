@@ -11,7 +11,8 @@
 
 /* Title Bar Styling */
 .title-bar {
-    /* background-color: #0056b3;  */
+    /* background-color: #B3040D;  */
+    /* background-image: "/assets/bg.png"; */
     color: black;
     border-radius: 8px 8px 0 0;
     /* Adjust margin to extend full width within the app-container's padding */
@@ -226,7 +227,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.3em;
+    font-size: 1em;
     font-weight: bold;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -501,4 +502,28 @@
     text-align: center;
     margin-top: 30px;
     font-weight: 500;
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150px;
+  width: 100px;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -150px;
+  }
+  100% {
+    left: 100%;
+  }
 }

@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-
-
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { motion } from "framer-motion";
 import {
   FaEdit,
   FaPlus,
@@ -20,8 +19,6 @@ import Swal from "sweetalert2";
 import ImportFromSwagger from "./ImportFromSwagger";
 import { camelCase } from "change-case";
 import "./App.css"; // Import the CSS file
-
-
 
 // --- Constants ---
 const JSON_PARSE_ERROR_TITLE = "Invalid JSON";
@@ -49,43 +46,7 @@ const CollapsibleSection = React.memo(
 );
 
 // --- Custom Hook for Line-by-Line Code Display ---
-// const useLineByLineCode = (fullCode, delay = 120) => {
-//   const [visibleCode, setVisibleCode] = useState("");
-//   const intervalRef = useRef(null);
-
-//   useEffect(() => {
-//     if (typeof fullCode !== "string" || !fullCode.trim()) {
-//       setVisibleCode("");
-//       return;
-//     }
-
-//     const lines = fullCode.split("\n");
-//     let currentLine = 0;
-//     let accumulatedCode = "";
-
-//     intervalRef.current = setInterval(() => {
-//       if (currentLine < lines.length) {
-//         accumulatedCode += lines[currentLine] + "\n";
-//         setVisibleCode(accumulatedCode);
-//         currentLine++;
-//       } else {
-//         clearInterval(intervalRef.current);
-//       }
-//     }, delay);
-
-//     return () => {
-//       if (intervalRef.current) {
-//         clearInterval(intervalRef.current);
-//       }
-//     };
-//   }, [fullCode, delay]);
-
-//   return visibleCode;
-//};
-
-
-const useLineByLineCode = (fullCode, delay = 50) => {
-
+const useLineByLineCode = (fullCode, delay = 120) => {
   const [visibleCode, setVisibleCode] = useState("");
   const intervalRef = useRef(null);
 
@@ -96,22 +57,13 @@ const useLineByLineCode = (fullCode, delay = 50) => {
     }
 
     const lines = fullCode.split("\n");
-    const maxAnimatedLines = 50;
-      let currentLine = 0;
+    let currentLine = 0;
     let accumulatedCode = "";
 
     intervalRef.current = setInterval(() => {
       if (currentLine < lines.length) {
-        if (currentLine < maxAnimatedLines) {
-                  accumulatedCode += lines[currentLine] + "\n";
+        accumulatedCode += lines[currentLine] + "\n";
         setVisibleCode(accumulatedCode);
-            } else {
-
-              const remainingLines = lines.slice(currentLine).join("\n");
-              accumulatedCode += remainingLines;
-              setVisibleCode(accumulatedCode);
-              clearInterval(intervalRef.current);
-            }
         currentLine++;
       } else {
         clearInterval(intervalRef.current);
@@ -128,22 +80,11 @@ const useLineByLineCode = (fullCode, delay = 50) => {
   return visibleCode;
 };
 
-
-
-
 // --- New TitleBar Component ---
-// const TitleBar = ({ title }) => (
-//   <div className="title-bar">
-//     <h1>{title}</h1>
-//   </div>
-// );
-
-
-//Footer component
-const Footer = ({ footerText }) => (
-  <div className="footer">
-    <p>{footerText}</p> 
-  </div>  
+const TitleBar = ({ title }) => (
+  <div className="title-bar">
+    <h1>{title}</h1>
+  </div>
 );
 
 // --- Main App Component ---
@@ -176,127 +117,6 @@ function App() {
     response: "edit",
     error: "edit",
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const TitleBar = ({ title, subtitle, onClick, logoSrc }) => {
-    const renderColoredTitle = (text) => 
-      text.split(' ').map((char, index) => (
-        <span 
-          key={index} 
-          style={{ color: index % 2 === 0 ? '#1B4158' : '#3AA4D8' }}
-        >
-          {char}  
-        </span>
-      ));
-
-      return (
-        <div
-          className="title-bar"
-          style={{
-            position: 'relative',
-            height: '80px',
-            display: 'flex',
-            alignItems: 'center', 
-            justifyContent: 'center',
-          }}
-          >
-            {/* Clickable logo - left aligned and fills the height */}
-            <div
-              onClick={onClick}
-              style={{
-                position: 'absolute',
-                left: '10px',
-                height: '100%',
-                cursor: 'pointer',
-              }}
-            >
-              <img
-                src={logoSrc}
-                alt="Logo"
-                style={{
-                  height: '80%',
-                  objectFit: 'contain',
-                }}
-              />
-          </div>
-
-{/* Centered title and subtitle */}
-          <div style={{ textAlign: 'center' }}>
-            {/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}> */}
-            <h1 className="clickable-title" onClick={onClick}>
-              {renderColoredTitle(title)}
-              </h1>
-              {/* </div> */}
-              {subtitle && <p className="subtitle">{subtitle}</p>}
-              </div>
-        </div>
-      );
-    };
 
   const [accordionState, setAccordionState] = useState({
     requestBody: false,
@@ -469,54 +289,68 @@ function App() {
     }
   }, []);
 
-  const usedClassNames = new Set();
-  const classNameMap = new Map();
-
-const generateClass = useCallback(
-    (name, jsonObj, indent = "    ",rootName = null, parentpath = '') => {
-      if (!rootName) rootName = name;
-
-      //Generate a unique and readable class name
-      let baseClassName = name;
-      let fullPath = parentpath ? `${parentpath}.${capitalize(name)}` : name;
-  
-        let className = usedClassNames.has(baseClassName) ? fullpathName : baseClassName;
-        usedClassNames.add(className);
-        classNameMap.set(`${parentpath}_${name}`, className); //map for reference
-
-      let classCode = `\n${indent}@Data\n${indent}public static class ${className} {\n`;
-      let nestedClasses = '';
+  const generateClass = useCallback(
+    (name, jsonObj, indent = "    ") => {
+      let classCode = `
+@Data
+public static class ${name} {\n`;
+      let nestedClasses = "";
 
       for (const [key, value] of Object.entries(jsonObj)) {
         let type = detectType(value);
-        let actualType = type;
 
         if (type === null) {
-        const nestedClassName = capitalize(key);
-        const nestedPathKey = `${fullPathName}_${nestedClassName}`;
-        const nestedCode = generateClass(nestedClassName, value, indent + '    ', rootName, fullPathName);
-        actualType = classNameMap.get(nestedPathKey);
-        nestedClasses += '\n' + nestedCode.split('\n').map(line => indent + line).join('\n') + '\n';
-        } else if (type.startsWith("List<") && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {  
+          // Nested object
           const nestedClassName = capitalize(key);
-          const nestedPathKey = `${fullPathName}_${nestedClassName}`;
-          const nestedCode = generateClass(nestedClassName, value[0], indent + "    ", rootName, fullPathName);
-          actualType = `List<${classNameMap.get(nestedPathKey)}>`;
-          nestedClasses += '\n' + nestedCode.split("\n").map(line => indent + line).join('\n') + '\n';
+          const nestedCode = generateClass(
+            nestedClassName,
+            value,
+            indent + "    "
+          );
+          type = nestedClassName;
+          nestedClasses +=
+            "\n" +
+            nestedCode
+              .split("\n")
+              .map((line) => indent + line)
+              .join("\n") +
+            "\n";
+        } else if (
+          type.startsWith("List<") &&
+          Array.isArray(value) &&
+          value.length > 0 &&
+          typeof value[0] === "object"
+        ) {
+          // List of objects
+          const nestedClassName = capitalize(key);
+          const nestedCode = generateClass(
+            nestedClassName,
+            value[0],
+            indent + "    "
+          );
+          type = `List<${nestedClassName}>`;
+          nestedClasses +=
+            "\n" +
+            nestedCode
+              .split("\n")
+              .map((line) => indent + line)
+              .join("\n") +
+            "\n";
         }
 
-        if (rootName === "ErrorResponseData" || rootName === "SuccessResponseData") {
-        classCode += `
-        @JsonProperty(value="${key}")
-        private ${actualType} ${camelCase(key)};\n`;
-      } else {
-        classCode += `${indent}private ${actualType} ${key};\n`;
+        // Apply @JsonProperty conditionally for specific classes
+        const jsonPropertyAnnotation =
+          name === "ErrorResponseData" || name === "SuccessResponseData"
+            ? `@JsonProperty(value="${key}")\n${indent}`
+            : indent;
 
-      }
+        classCode += `${jsonPropertyAnnotation}private ${type} ${camelCase(
+          key
+        )};\n`;
       }
 
-      classCode += nestedClasses + `${indent}}\n`;
-return classCode;
+      classCode += "\n" + nestedClasses + "}\n";
+      return classCode;
     },
     [capitalize, detectType]
   );
@@ -573,16 +407,6 @@ return classCode;
     [flattenJson]
   );
 
-  const formatErrorJsonToTable = useCallback(
-    (inputJson) => {
-      const flatJson = flattenJson(inputJson);
-      const headers = ["action","fieldName"].concat(Object.keys(flatJson));
-      const placeholders = headers.map((key) => `<${key}>`);
-      return `|${headers.join("|")}|\n|${placeholders.join("|")}|`;
-    },
-    [flattenJson]
-  );
-
   const formatJsonToExample = useCallback(
     (inputJson) => {
       const flatJson = flattenJson(inputJson);
@@ -596,8 +420,14 @@ return classCode;
   const formatJsonToErrorExample = useCallback(
     (inputJson) => {
       const flatJson = flattenJson(inputJson);
-      const headers = ["action","fieldName"].concat(Object.keys(flatJson)).concat(["errorCode", "errorMessage"]);
-      const values = ["remove or null or invalid","field to be modified"].concat(Object.values(flatJson)).concat(["yourErrorCode", "yourErrorMessage"]);
+      const headers = Object.keys(flatJson).concat([
+        "errorCode",
+        "errorMessage",
+      ]);
+      const values = Object.values(flatJson).concat([
+        "yourErrorCode",
+        "yourErrorMessage",
+      ]);
       return `|${headers.join("|")}|\n|${values.join("|")}|`;
     },
     [flattenJson]
@@ -662,7 +492,6 @@ return classCode;
     let responsePojoClasses = "";
     let errorResponsePojoClasses = "";
     let templateTableString = "";
-    let errorTemplateTableString = "";
     let exampleTableString = "";
     let exampleErrorTablestring = "";
     let userInputMap = "";
@@ -686,14 +515,7 @@ return classCode;
             requestType === "GET"
               ? ""
               : "\n" + formatJsonToTable(selectedDefaults);
-
-          errorTemplateTableString =
-            requestType === "GET"
-              ? ""
-              : "\n" + formatErrorJsonToTable(selectedDefaults);
-
-          
-        exampleTableString =
+          exampleTableString =
             requestType === "GET"
               ? ""
               : "\nExamples:\n" + formatJsonToExample(selectedDefaults);
@@ -778,7 +600,6 @@ import org.ocbcqa.core.base.service.BaseRestService;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.simple.parser.ParseException;
@@ -818,7 +639,7 @@ ${userInputMap}
 
     public ${capitalize(serviceName)}() {
         try {
-            String appUrl = "";            //TODO: please fill in your host url here
+            String appUrl = appConfig.get("applicationName", "applicationKey");
             hostAddress = new URL(appUrl);
         } catch (MalformedURLException muException) {
             throw new RuntimeException(muException.getMessage());
@@ -843,11 +664,11 @@ ${userInputMap}
         this.errorResponseData = errorResponseData;
     }
 
-    public SuccessResponseData getSuccessResponseData() {
+    public SuccessResponseData getSuccessResponseData(Response response) {
         return response.as(SuccessResponseData.class);
     }
 
-    public ErrorResponseData getErrorResponseData() {
+    public ErrorResponseData getErrorResponseData(Response response) {
         return response.as(ErrorResponseData.class);
     }
 
@@ -858,46 +679,9 @@ ${userInputMap}
     public void validateErrorResponseSchema() {
         validateAgainstSchema(ErrorResponseData.class);
     }
-
-public JSONObject updateRequestBodyAsPerDataInput(JSONObject reqBody, String fieldName, String action) {
-String[] actionField = fieldName.split("\\\\.");
-String key = actionField[0];
-String subKey = actionField.length > 1 ? actionField[1] : null;
-
-switch (action.toLowerCase()) {
-    case "remove":
-      if (subKey != null && reqBody.get(key) instanceof JSONObject) {
-        ((JSONObject) reqBody.get(key)).remove(subKey);
-      } else {
-        reqBody.remove(key);
-      }
-      break;
-
-    case "null":
-      if (subKey != null && reqBody.get(key) instanceof JSONObject) {
-        ((JSONObject) reqBody.get(key)).put(subKey, "");
-      } else {
-        reqBody.put(key, "");
-      }
-      break;
-
-      default:
-        // Optionally handle unknown actions
-        throw new IllegalArgumentException("Unsupported action: " + action);
-}
-
-return reqBody;
-}
-
-public void buildRequestBodywithUserData(Map<String, String> payLoad) throws JsonProcessingException {
-ObjectMapper mapper = new ObjectMapper();
-Map<String, Object> map = mapper.convertValue(finalRequestBody, Map.class);
-mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-finalRequestBody = mapper.readValue(updateRequestBodyAsPerDataInput(new JSONobject(map),payLoad.get("fieldName"),payLoad.get("action")).toString(), RequestBody.class);
-}
 `;
 
-let getOrPostStep = `public void sendRequestToServiceEndpoint() throws JsonProcessingException, ParseException {`;
+    let getOrPostStep = `public void sendRequestToServiceEndpoint() {`;
     let scenarioType = "Scenario";
 
     if (
@@ -908,16 +692,7 @@ let getOrPostStep = `public void sendRequestToServiceEndpoint() throws JsonProce
       if (selectedDefaults && Object.keys(selectedDefaults).length > 0) {
         getOrPostStep = `public void sendRequestToServiceEndpoint(DataTable dt) throws JsonProcessingException, ParseException {
     List<Map<String, String>> userData= dt.asMaps(String.class, String.class);
-    ${camelCase(serviceName)}.requestBody(userData.get(0));
-    Optional.ofNullable(userData.get(0).get("action"))
-    .filter(action -> action.equalsIgnoreCase("remove") || action.equalsIgnoreCase("null"))
-    .ifPresent(action -> {
-        try {
-            ${camelCase(serviceName)}.buildRequestBodywithUSerData(userData.get(0));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    });`;
+    ${camelCase(serviceName)}.requestBody(userData.get(0));`;
         scenarioType = "Scenario Outline";
       } else {
         getOrPostStep = `public void sendRequestToServiceEndpoint() throws JsonProcessingException, ParseException {
@@ -934,7 +709,6 @@ import org.ocbcqa.core.base.test.BaseStep;
 import org.ocbcqa.core.util.CustomSoftAssert;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 
@@ -953,9 +727,9 @@ public class ${capitalize(serviceName)}Steps extends BaseStep {
         Logger.info(response.prettyPrint());
     }
 
-    @Then("the user should get status code for ${serviceName} endpoint as {int}")
+    @Then("the user should get status code as {int}")
     public void verifystatusCode(int expectedStatusCode) {
-        Assert.assertEquals(response.getStatusCode(),expectedStatusCode);
+        Assert.assertEquals(expectedStatusCode, response.getStatusCode());
     }
 
     @Then("the user verify the success schema of the response returned as expected for ${serviceName} service endpoint")
@@ -987,13 +761,13 @@ public class ${capitalize(serviceName)}Steps extends BaseStep {
 
 ${scenarioType}: Verify successful ${requestType} request to ${serviceName} 
     Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint${templateTableString}
-    Then the user should get status code for ${serviceName} endpoint as 200
+    Then the user should get status code as 200
     And the user verify the success schema of the response returned as expected for ${serviceName} service endpoint
     And the user verify the success response body should contain valid data for ${serviceName} service endpoint${exampleTableString}
 
 ${scenarioType}: Verify error response for ${requestType} request to ${serviceName}
-    Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint${errorTemplateTableString}
-   Then the user should get status code for ${serviceName} endpoint as 200
+    Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint${templateTableString}
+    Then the user should get status code as 400
     And the user verify the error schema of the response returned as expected for ${serviceName} service endpoint
     And the user verify the error response body should contain valid data for ${serviceName} service endpoint with <errorCode> and <errorMessage>${exampleErrorTablestring}
 `;
@@ -1146,81 +920,6 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
     );
   }, [featureFile, serviceName, capitalize, downloadFile]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   const renderFieldCheckboxes = useCallback(
     (obj, path = "") => {
       return Object.entries(obj).map(([key, value]) => {
@@ -1259,7 +958,6 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
 
   const deselectAllFields = useCallback(() => setSelectedRequestFields([]), []);
 
-
   const copyToClipboard = useCallback(
     (text, successMessage = "Code copied to clipboard!") => {
       if (!text) {
@@ -1269,8 +967,6 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
         });
         return;
       }
-
-      if(navigator?.clipboard?.writeText){
       navigator.clipboard
         .writeText(text)
         .then(() => {
@@ -1285,43 +981,19 @@ ${scenarioType}: Verify error response for ${requestType} request to ${serviceNa
           });
         })
         .catch((err) => {
-          console.error("clipboard API failed ", err);
-          fallbackCopy(text, successMessage);
+          console.error("Failed to copy: ", err);
+          toast.error("Failed to copy code!", {
+            position: TOAST_POSITION,
+            autoClose: TOAST_AUTO_CLOSE,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
         });
-      } else {
-        fallbackCopy(text, successMessage);
-      }
-
-function fallbackCopy(text, successMessage) {
-  try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.setAttribute("readonly", "");
-    textArea.style.position = "absolute";
-    textArea.style.left = "-9999px";
-    document.body.appendChild(textArea);
-    textArea.select();
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-    
-    if (successful) {
-      toast.success(successMessage, {
-        position: TOAST_POSITION,
-        autoClose: TOAST_AUTO_CLOSE,  
-      });
-    }else {
-      throw new Error("Fallback  Copy failed");
-    }
-  } catch (err) {
-    console.error("Fallback Copy error", err);
-    toast.error("Failed to copy code!", {
-      position: TOAST_POSITION,
-      autoClose: TOAST_AUTO_CLOSE,
-    });
-  }
-}
     },
-[]
+    []
   );
 
   const handleServiceCopy = useCallback(() => {
@@ -1370,10 +1042,14 @@ function fallbackCopy(text, successMessage) {
             <div className="left-column">
               <h3>Import API Details</h3>
               <ImportFromSwagger onReset={clearAll} onData={handleData} />
-              {/* <UploadJSON /> */}
-              <p className="import-swagger-info">
-              Amplify your API tests with ouor autonomous tool, Go fast. Go smart. Go API.
-            </p>
+              {/* <p className="import-swagger-info">
+                Use the button above to import API definitions directly from a
+                Swagger OpenAPI JSON file. This will automatically populate the
+                API details on the right.
+              </p> */}
+              <p className="import-swagger-info shimmer text-gray-900 text-base p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl shadow-inner">
+  Use the button above to import API definitions directly from a Swagger OpenAPI JSON file. This will automatically populate the API details on the right.
+</p>
             </div>
             <div className="right-column">
               <h3>Manual API Details Entry</h3>
@@ -1502,9 +1178,6 @@ function fallbackCopy(text, successMessage) {
                       className="text-area-field"
                       rows="10"
                       value={requestBody}
-
-
-
                       onChange={(e) => {
                         setRequestBody(e.target.value);
                         setIsRequestBodyFormatted(false);
@@ -1535,7 +1208,6 @@ function fallbackCopy(text, successMessage) {
                       <button
                         onClick={() => toggleEditMode("request")}
                         className="action-button"
-                        disabled={requestType === "GET"}
                       >
                         <FaEdit /> Edit
                       </button>
@@ -1665,7 +1337,7 @@ function fallbackCopy(text, successMessage) {
                   </div>
                 )}
               </CollapsibleSection>
-              {/* <div className="input-group">
+              <div className="input-group">
                 <label>Response Code</label>
                 <select
                   value={responseCode}
@@ -1681,7 +1353,7 @@ function fallbackCopy(text, successMessage) {
                     </option>
                   ))}
                 </select>
-              </div> */}
+              </div>
             </div>
           </div>
         );
@@ -1698,23 +1370,17 @@ function fallbackCopy(text, successMessage) {
                     showLineNumbers
                   >
                     {visibleGeneratedCode}
-                     {/* {generatedCode} */}
                   </SyntaxHighlighter>
                   <div className="code-actions">
                     <button
                       onClick={handleServiceCopy}
-                      className="action-copy-button"
+                      className="action-button"
                     >
                       <FaCopy /> Copy
                     </button>
                     <button onClick={downloadCode} className="action-button">
                       <FaDownload /> Download
                     </button>
-
-
-
-
-
                   </div>
                 </div>
               </div>
@@ -1727,10 +1393,9 @@ function fallbackCopy(text, successMessage) {
                     showLineNumbers
                   >
                     {visibleStepDefinition}
-                     {/* {stepDefinition} */}
                   </SyntaxHighlighter>
                   <div className="code-actions">
-                    <button onClick={handleStepCopy} className="action-copy-button">
+                    <button onClick={handleStepCopy} className="action-button">
                       <FaCopy /> Copy
                     </button>
                     <button
@@ -1751,12 +1416,11 @@ function fallbackCopy(text, successMessage) {
                     showLineNumbers
                   >
                     {visibleFeatureFile}
-                    {/* {featureFile} */}
                   </SyntaxHighlighter>
                   <div className="code-actions">
                     <button
                       onClick={handleFeatureCopy}
-                      className="action-copy-button"
+                      className="action-button"
                     >
                       <FaCopy /> Copy
                     </button>
@@ -1771,7 +1435,8 @@ function fallbackCopy(text, successMessage) {
               </div>
             </div>
             <p className="final-step-info">
-             Automation made easy Instantly dowload or copy complete automation code and save your time and effort!
+              Your automation code, step definition, and feature file are ready.
+              You can copy or download them.
             </p>
           </>
         );
@@ -1793,14 +1458,7 @@ function fallbackCopy(text, successMessage) {
         pauseOnHover
       />
 
-      {/* <TitleBar title="API Auto Code Gen" /> */}
-
-      <TitleBar title="API Go"
-        subtitle="Go Fast.  Go Smart. Go API."
-        onClick={() => setCurrentStep(1)}s
-        logoSrc="/images/l2.png"
-      />
-
+      <TitleBar title="API Auto Code Gen" />
 
       {/* Step Indicators */}
       <div className="stepper-progress">
@@ -1808,33 +1466,18 @@ function fallbackCopy(text, successMessage) {
           className={`step-indicator ${currentStep === 1 ? "active" : ""} ${
             currentStep > 1 ? "completed" : ""
           }`}
-          onClick={() => setCurrentStep(1)}
         >
-          API Details
+          1. API Details
         </div>
         <div
           className={`step-indicator ${currentStep === 2 ? "active" : ""} ${
             currentStep > 2 ? "completed" : ""
           }`}
-
-          onClick={() => {
-            //
-            if(currentStep==1)
-            {
-              //
-              //
-              return;
-            }
-
-            setCurrentStep(2);
-
-          }}
-
         >
-          Request/Response
+          2. Request/Response
         </div>
         <div className={`step-indicator ${currentStep === 3 ? "active" : ""}`}>
-           Generated Code
+          3. Generated Code
         </div>
       </div>
 
@@ -1843,11 +1486,11 @@ function fallbackCopy(text, successMessage) {
       <div className="action-buttons">
        
 
-        {/* {currentStep > 1 && currentStep <= 3 && (
+        {currentStep > 1 && currentStep <= 3 && (
           <button type="button" onClick={prevStep} className="secondary-button">
            <FaArrowLeft /> Previous
           </button>
-        )} */}
+        )}
         {currentStep !== 3 && (
          <button type="button" onClick={clearAll} className="clear-button">
           Clear
@@ -1866,28 +1509,127 @@ function fallbackCopy(text, successMessage) {
             <FaCode /> Generate Code
           </button>
         )}
-
          {currentStep == 3 && (
          <button type="button" onClick={clearAll} className="clear-button">
           Reset All 
             </button>)}
-
-            {currentStep === 3 && (
-              <button onClick={() => {
-                downloadFeatureFile();
-                downloadStepDefinition();
-                downloadCode();
-              }}
-      className="generate-button"
-      ><FaDownload /> Download All
-        </button>
-            )}
       </div>
-      <Footer footerText="Developed by GETS (Group Engineering Testing Services)" />
-
     </div>
   );
 }
 
-export default App;
 
+
+const TrueFocus = ({
+  sentence = "True Focus",
+  manualMode = false,
+  blurAmount = 5,
+  borderColor = "green",
+  glowColor = "rgba(0, 255, 0, 0.6)",
+  animationDuration = 0.5,
+  pauseBetweenAnimations = 1,
+}) => {
+  const words = sentence.split(" ");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [lastActiveIndex, setLastActiveIndex] = useState(null);
+  const containerRef = useRef(null);
+  const wordRefs = useRef([]);
+  const [focusRect, setFocusRect] = useState({ x: 0, y: 0, width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!manualMode) {
+      const interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % words.length);
+      }, (animationDuration + pauseBetweenAnimations) * 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [manualMode, animationDuration, pauseBetweenAnimations, words.length]);
+
+  useEffect(() => {
+    if (currentIndex === null || currentIndex === -1) return;
+
+    if (!wordRefs.current[currentIndex] || !containerRef.current) return;
+
+    const parentRect = containerRef.current.getBoundingClientRect();
+    const activeRect = wordRefs.current[currentIndex].getBoundingClientRect();
+
+    setFocusRect({
+      x: activeRect.left - parentRect.left,
+      y: activeRect.top - parentRect.top,
+      width: activeRect.width,
+      height: activeRect.height,
+    });
+  }, [currentIndex, words.length]);
+
+  const handleMouseEnter = (index) => {
+    if (manualMode) {
+      setLastActiveIndex(index);
+      setCurrentIndex(index);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (manualMode) {
+      setCurrentIndex(lastActiveIndex);
+    }
+  };
+
+  return (
+    <div className="focus-container" ref={containerRef}>
+      {words.map((word, index) => {
+        const isActive = index === currentIndex;
+        return (
+          <span
+            key={index}
+            ref={(el) => (wordRefs.current[index] = el)}
+            className={`focus-word ${manualMode ? "manual" : ""} ${isActive && !manualMode ? "active" : ""
+              }`}
+            style={{
+              filter:
+                manualMode
+                  ? isActive
+                    ? `blur(0px)`
+                    : `blur(${blurAmount}px)`
+                  : isActive
+                    ? `blur(0px)`
+                    : `blur(${blurAmount}px)`,
+              "--border-color": borderColor,
+              "--glow-color": glowColor,
+              transition: `filter ${animationDuration}s ease`,
+            }}
+            onMouseEnter={() => handleMouseEnter(index)}
+            onMouseLeave={handleMouseLeave}
+          >
+            {word}
+          </span>
+        );
+      })}
+
+      <motion.div
+        className="focus-frame"
+        animate={{
+          x: focusRect.x,
+          y: focusRect.y,
+          width: focusRect.width,
+          height: focusRect.height,
+          opacity: currentIndex >= 0 ? 1 : 0,
+        }}
+        transition={{
+          duration: animationDuration,
+        }}
+        style={{
+          "--border-color": borderColor,
+          "--glow-color": glowColor,
+        }}
+      >
+        <span className="corner top-left"></span>
+        <span className="corner top-right"></span>
+        <span className="corner bottom-left"></span>
+        <span className="corner bottom-right"></span>
+      </motion.div>
+    </div>
+  );
+};
+
+export default App;
