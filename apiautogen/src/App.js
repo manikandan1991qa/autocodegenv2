@@ -20,6 +20,7 @@ import Swal from "sweetalert2";
 import ImportFromSwagger from "./ImportFromSwagger";
 import { camelCase } from "change-case";
 import "./App.css"; // Import the CSS file
+import { xcode } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 
 
@@ -245,7 +246,7 @@ function App() {
 
   const TitleBar = ({ title, subtitle, onClick, logoSrc }) => {
     const renderColoredTitle = (text) => 
-      text.split(' ').map((char, index) => (
+      text.split('').map((char, index) => (
         <span 
           key={index} 
           style={{ color: index % 2 === 0 ? '#1B4158' : '#3AA4D8' }}
@@ -478,9 +479,9 @@ const generateClass = useCallback(
 
       //Generate a unique and readable class name
       let baseClassName = name;
-      let fullPath = parentpath ? `${parentpath}.${capitalize(name)}` : name;
+      let fullPathName = parentpath ? `${parentpath}.${capitalize(name)}` : name;
   
-        let className = usedClassNames.has(baseClassName) ? fullpathName : baseClassName;
+        let className = usedClassNames.has(baseClassName) ? fullPathName : baseClassName;
         usedClassNames.add(className);
         classNameMap.set(`${parentpath}_${name}`, className); //map for reference
 

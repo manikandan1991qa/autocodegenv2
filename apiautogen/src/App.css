@@ -20,6 +20,13 @@
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+.title-bar .subtitle {
+    font-size: 0.8em; /* Larger, more prominent title */
+    color:black;
+    font-weight: bold; /* Bolder font weight */
+    margin-top:-2px ;
+    
+}
 
 .title-bar h1 {
     margin: 0;
@@ -27,19 +34,46 @@
     font-weight: 600; /* Bolder font weight */
     letter-spacing: 0.8px; /* Slightly increased letter spacing */
     text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Subtle text shadow */
+    width: fit-content;
+    margin:0 auto;
+    text-align: center;
+    display:block;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Stepper Progress Indicators */
 .stepper-progress {
     display: flex;
+
     justify-content: space-around;
-    margin-bottom: 5px; /* More space below stepper */
-    padding-bottom: 5px; /* More padding below for the border */
-    border-bottom: 2px solid #eee; /* Thicker border */
+    margin-bottom: 5px;
+   
+
+    gap:3px;
+
 }
 
 .step-indicator {
-    flex: 1;
+   /* flex: 1; */
     text-align: center;
     padding: 12px; /* Increased padding */
     border-bottom: 4px solid #ccc; /* Thicker border */
@@ -131,6 +165,7 @@
 .input-field,
 .text-area-field {
     width: 100%;
+
     padding: 14px; /* Increased padding for better touch targets */
     border: 1px solid #ccc; /* Slightly darker border */
     border-radius: 6px;
@@ -404,6 +439,23 @@
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .action-button:hover {
     background-color: #e30613;
     transform: translateY(-1px);
@@ -503,27 +555,8 @@
     margin-top: 30px;
     font-weight: 500;
 }
-.shimmer {
-  position: relative;
-  overflow: hidden;
+.clickable-title{
+    cursor: pointer;
+    width: fit-content;
 }
 
-.shimmer::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -150px;
-  width: 100px;
-  height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    left: -150px;
-  }
-  100% {
-    left: 100%;
-  }
-}
